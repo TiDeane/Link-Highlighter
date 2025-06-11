@@ -1,0 +1,5 @@
+.highlighted-link {
+  /*color: #ec725e;*/
+  background-color: yellow;
+  outline: 2px solid orange;
+}

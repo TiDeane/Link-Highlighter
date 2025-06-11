@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Link Darkener Toggle",
+  "version": "1.0",
+  "description": "Highlights clicked links while enabled.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon.png"
+    }
+  },
+  "permissions": ["storage", "scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "icons": {
+    "48": "icons/icon.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "tiagortg@gmail.com",
+      "strict_min_version": "109.0"
+    }
+  }
+}
