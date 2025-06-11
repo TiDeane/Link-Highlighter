@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Link Darkener Toggle",
+  "name": "Link Highlighter",
   "version": "1.0",
   "description": "Highlights clicked links while enabled.",
   "action": {
