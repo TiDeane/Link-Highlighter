@@ -1,3 +1,4 @@
+// Save clicked links
 document.addEventListener('mousedown', (e) => {
   let link = e.target.closest('a');
   if (!link || !link.href) return;
@@ -48,5 +49,14 @@ browser.storage.onChanged.addListener((changes, area) => {
 browser.storage.local.get(['isActive', 'myList']).then(({ isActive, myList }) => {
   if (isActive && myList && myList.length) {
     highlightLinks(myList);
+  }
+});
+
+// Clear highlights immediately upon toggle off
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'clearHighlights') {
+    document.querySelectorAll('a.highlighted-link').forEach(el => {
+      el.classList.remove('highlighted-link');
+    });
   }
 });
