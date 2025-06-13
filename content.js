@@ -15,17 +15,32 @@ document.addEventListener('mousedown', async (e) => {
   }
 });
 
+function normalizeUrl(url) {
+  try {
+    const u = new URL(url);
+    return u.origin + u.pathname.replace(/\/$/, '');
+  } catch {
+    return url;
+  }
+}
+
 async function highlightLinks(links) {
+  const normalizedList = links.map(normalizeUrl);
+
   document.querySelectorAll('a').forEach(link => {
-    if (links.includes(link.href)) {
+    const href = normalizeUrl(link.href);
+    if (normalizedList.includes(href)) {
       link.classList.add('highlighted-link');
     }
   });
 }
 
 async function clearHighlights(links) {
+  const normalizedList = links.map(normalizeUrl);
+
   document.querySelectorAll('a').forEach(link => {
-    if (links.includes(link.href)) {
+    const href = normalizeUrl(link.href);
+    if (normalizedList.includes(href)) {
       link.classList.remove('highlighted-link');
     }
   });
