@@ -15,7 +15,7 @@ document.addEventListener('mousedown', async (e) => {
   }
 });
 
-function normalizeUrl(url) {
+function normalizeURL(url) {
   try {
     const u = new URL(url);
     return u.origin + u.pathname.replace(/\/$/, '');
@@ -25,10 +25,10 @@ function normalizeUrl(url) {
 }
 
 async function highlightLinks(links) {
-  const normalizedList = links.map(normalizeUrl);
+  const normalizedList = links.map(normalizeURL);
 
   document.querySelectorAll('a').forEach(link => {
-    const href = normalizeUrl(link.href);
+    const href = normalizeURL(link.href);
     if (normalizedList.includes(href)) {
       link.classList.add('highlighted-link');
     }
@@ -36,10 +36,10 @@ async function highlightLinks(links) {
 }
 
 async function clearHighlights(links) {
-  const normalizedList = links.map(normalizeUrl);
+  const normalizedList = links.map(normalizeURL);
 
   document.querySelectorAll('a').forEach(link => {
-    const href = normalizeUrl(link.href);
+    const href = normalizeURL(link.href);
     if (normalizedList.includes(href)) {
       link.classList.remove('highlighted-link');
     }
@@ -71,7 +71,7 @@ browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highl
 });
 
 browser.runtime.onMessage.addListener((message) => {
-  if (message.action === 'highlightLinks' && Array.isArray(message.links)) {
+  if (message.action === 'highlightLinks') {
     highlightLinks(message.links);
   }
 
