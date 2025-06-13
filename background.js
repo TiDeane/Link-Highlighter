@@ -1,6 +1,13 @@
 function sendHighlightsToTab(tabId) {
   browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highlightList }) => {
-    if (!isActive || !highlightList?.length) return;
+    if (!isActive || !highlightList?.length) {
+      // Explicitly send a clear message if inactive
+      browser.tabs.sendMessage(tabId, {
+        action: 'clearHighlights',
+        links: myList ?? []
+      }).catch(() => {});
+      return;
+    }
 
     browser.tabs.sendMessage(tabId, {
       action: 'highlightLinks',

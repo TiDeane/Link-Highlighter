@@ -9,8 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (toggle.checked) {
       await browser.storage.local.set({ isActive: true });
     } else {
-      await browser.storage.local.set({ highlightList: [] });
-      await browser.storage.local.set({ isActive: false });
+      await browser.storage.local.set({ highlightList: [], isActive: false });
 
       const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
       if (tab?.id) {
