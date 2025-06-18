@@ -77,15 +77,6 @@ browser.runtime.onMessage.addListener((message) => {
   }
 });
 
-function normalizeURL(url) {
-  try {
-    const u = new URL(url);
-    return u.origin + u.pathname.replace(/\/$/, '');
-  } catch {
-    return url;
-  }
-}
-
 // Main highlighting function
 async function setupHighlighting() {
   const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
