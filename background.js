@@ -1,19 +1,20 @@
-function sendHighlightsToTab(tabId) {
-  browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highlightList }) => {
+async function sendHighlightsToTab(tabId) {
+  try {
+    const { isActive, highlightList } = await browser.storage.local.get(['isActive', 'highlightList']);
     if (!isActive || !highlightList?.length) {
       // Explicitly send a clear message if inactive
-      browser.tabs.sendMessage(tabId, {
+      await browser.tabs.sendMessage(tabId, {
         action: 'clearHighlights',
         links: highlightList ?? []
-      }).catch(() => {});
+      });
       return;
     }
 
-    browser.tabs.sendMessage(tabId, {
+    await browser.tabs.sendMessage(tabId, {
       action: 'highlightLinks',
       links: highlightList
-    }).catch(() => {});
-  });
+    });
+  } catch { };
 }
 
 browser.tabs.onCreated.addListener(tab => {

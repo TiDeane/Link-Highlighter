@@ -14,7 +14,7 @@ document.addEventListener('mousedown', async (e) => {
     await browser.storage.local.set({ highlightList: Array.from(linkSet) });
 
     // Re-apply highlights immediately in current tab
-    highlightLinks(linkSet);
+    scheduleHighlighting(linkSet);
   }
 });
 
@@ -52,7 +52,7 @@ browser.storage.onChanged.addListener((changes, area) => {
       const normalizedSet = new Set(highlightList.map(normalizeURL));
 
       if (isActive && normalizedSet.size > 0) {
-        highlightLinks(highlightList);
+        scheduleHighlighting(highlightList);
       } else if (normalizedSet.size > 0) {
         clearHighlight(highlightList);
       } else {
@@ -64,11 +64,12 @@ browser.storage.onChanged.addListener((changes, area) => {
 });
 
 // On initial load, do the same check
-browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highlightList }) => {
-  if (isActive && highlightList && highlightList.length) {
+(async () => {
+  const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
+  if (isActive && highlightList.length) {
     const normalizedSet = new Set(highlightList.map(normalizeURL));
 
-    highlightLinks(normalizedSet);
+    scheduleHighlighting(normalizedSet);
     observeDynamicLinks(normalizedSet);
   }
 });
@@ -77,7 +78,7 @@ browser.runtime.onMessage.addListener((message) => {
   const normalizedSet = new Set(message.links.map(normalizeURL));
 
   if (message.action === 'highlightLinks') {
-    highlightLinks(normalizedSet);
+    scheduleHighlighting(normalizedSet);
   }
 
   if (message.action === 'clearHighlights') {
@@ -85,34 +86,59 @@ browser.runtime.onMessage.addListener((message) => {
   }
 });
 
+/* Highlights new elements being added */
 let pending = false;
 function observeDynamicLinks() {
   const observer = new MutationObserver(() => {
     if (pending) return;
     pending = true;
+
     setTimeout(async () => {
       const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
       if (isActive && highlightList.length) {
         const normalizedSet = new Set(highlightList.map(normalizeURL));
-        highlightLinks(normalizedSet);
+        scheduleHighlighting(normalizedSet);
       }
       pending = false;
-    }, 1000); // debounce
+    }, 500); // debounce
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
+// Highlights when the URL changes (SPA navigation)
 let currentUrl = location.href;
-setInterval(() => {
+setInterval(async () => {
   if (location.href !== currentUrl) {
     currentUrl = location.href;
-    // When URL changes (SPA navigation), re-highlight links
-    browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highlightList }) => {
-      if (isActive && highlightList.length) {
-        const normalizedSet = new Set(highlightList.map(normalizeURL));
-        highlightLinks(normalizedSet);
-      }
-    });
+    
+    const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
+    if (isActive && highlightList.length) {
+      const normalizedSet = new Set(highlightList.map(normalizeURL));
+      scheduleHighlighting(normalizedSet);
+    }
   }
-}, 1000); // check every second
+}, 500);
+
+/* Highlights when scrolling */
+let scrollPending = false;
+function handleScrollHighlighting() {
+  if (scrollPending) return;
+  scrollPending = true;
+
+  setTimeout(async () => {
+    const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
+    if (isActive && highlightList.length) {
+      const normalizedSet = new Set(highlightList.map(normalizeURL));
+      scheduleHighlighting(normalizedSet);
+    }
+    scrollPending = false;
+  }, 500); // debounce
+}
+
+window.addEventListener('scroll', handleScrollHighlighting, { passive: true });
+
+/* Highlight when browser is idle (or after 0.5s) */
+function scheduleHighlighting(normalizedSet) {
+  requestIdleCallback(() => highlightLinks(normalizedSet), { timeout: 500 });
+}
