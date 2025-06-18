@@ -14,7 +14,7 @@ document.addEventListener('mousedown', async (e) => {
     await browser.storage.local.set({ highlightList: Array.from(linkSet) });
 
     // Re-apply highlights immediately in current tab
-    scheduleHighlighting(linkSet);
+    setupHighlighting(linkSet);
   }
 });
 
@@ -25,15 +25,6 @@ function normalizeURL(url) {
   } catch {
     return url;
   }
-}
-
-async function highlightLinks(linkSet) {
-  document.querySelectorAll('a').forEach(link => {
-    const href = normalizeURL(link.href);
-    if (linkSet.has(href)) {
-      link.classList.add('highlighted-link');
-    }
-  });
 }
 
 async function clearHighlights(linkSet) {
@@ -52,7 +43,7 @@ browser.storage.onChanged.addListener((changes, area) => {
       const normalizedSet = new Set(highlightList.map(normalizeURL));
 
       if (isActive && normalizedSet.size > 0) {
-        scheduleHighlighting(highlightList);
+        setupHighlighting(highlightList);
       } else if (normalizedSet.size > 0) {
         clearHighlight(highlightList);
       } else {
@@ -69,7 +60,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (isActive && highlightList.length) {
     const normalizedSet = new Set(highlightList.map(normalizeURL));
 
-    scheduleHighlighting(normalizedSet);
+    setupHighlighting(normalizedSet);
     observeDynamicLinks(normalizedSet);
   }
 });
@@ -78,7 +69,7 @@ browser.runtime.onMessage.addListener((message) => {
   const normalizedSet = new Set(message.links.map(normalizeURL));
 
   if (message.action === 'highlightLinks') {
-    scheduleHighlighting(normalizedSet);
+    setupHighlighting(normalizedSet);
   }
 
   if (message.action === 'clearHighlights') {
@@ -86,59 +77,73 @@ browser.runtime.onMessage.addListener((message) => {
   }
 });
 
-/* Highlights new elements being added */
-let pending = false;
-function observeDynamicLinks() {
-  const observer = new MutationObserver(() => {
+function normalizeURL(url) {
+  try {
+    const u = new URL(url);
+    return u.origin + u.pathname.replace(/\/$/, '');
+  } catch {
+    return url;
+  }
+}
+
+// Main highlighting function
+async function setupHighlighting() {
+  const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
+  if (!isActive || highlightList.length === 0) return;
+
+  const highlightSet = new Set(highlightList.map(normalizeURL));
+
+  // one observer for all links
+  const linkObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const link = entry.target;
+        const normalizedHref = normalizeURL(link.href);
+        if (highlightSet.has(normalizedHref)) {
+          link.classList.add('highlighted-link');
+          linkObserver.unobserve(link);
+        }
+      }
+    });
+  }, {
+    root: null,
+    threshold: 0.1
+  });
+
+  document.querySelectorAll('a[href]').forEach(link => {
+    linkObserver.observe(link);
+  });
+
+  observeNewLinks(linkObserver);
+}
+
+// Watch for new <a> elements being added to the DOM
+function observeNewLinks(linkObserver) {
+  let pending = false;
+
+  const mutationObserver = new MutationObserver(() => {
     if (pending) return;
     pending = true;
 
-    setTimeout(async () => {
-      const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
-      if (isActive && highlightList.length) {
-        const normalizedSet = new Set(highlightList.map(normalizeURL));
-        scheduleHighlighting(normalizedSet);
-      }
+    setTimeout(() => {
+      const links = [];
+      document.querySelectorAll('a[href]').forEach(link => links.push(link));
+      links.forEach(link => linkObserver.observe(link));
       pending = false;
-    }, 500); // debounce
+    }, 300); // delay
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  mutationObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 // Highlights when the URL changes (SPA navigation)
 let currentUrl = location.href;
-setInterval(async () => {
+setInterval(() => {
   if (location.href !== currentUrl) {
     currentUrl = location.href;
-    
-    const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
-    if (isActive && highlightList.length) {
-      const normalizedSet = new Set(highlightList.map(normalizeURL));
-      scheduleHighlighting(normalizedSet);
-    }
+    setupHighlighting();
   }
 }, 500);
 
-/* Highlights when scrolling */
-let scrollPending = false;
-function handleScrollHighlighting() {
-  if (scrollPending) return;
-  scrollPending = true;
-
-  setTimeout(async () => {
-    const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
-    if (isActive && highlightList.length) {
-      const normalizedSet = new Set(highlightList.map(normalizeURL));
-      scheduleHighlighting(normalizedSet);
-    }
-    scrollPending = false;
-  }, 500); // debounce
-}
-
-window.addEventListener('scroll', handleScrollHighlighting, { passive: true });
-
-/* Highlight when browser is idle (or after 0.5s) */
-function scheduleHighlighting(normalizedSet) {
-  requestIdleCallback(() => highlightLinks(normalizedSet), { timeout: 500 });
-}
+// Run once on page load
+setupHighlighting();
