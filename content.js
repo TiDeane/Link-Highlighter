@@ -6,12 +6,15 @@ document.addEventListener('mousedown', async (e) => {
   const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
   if (!isActive) return;
 
-  if (!highlightList.includes(link.href)) {
-    highlightList.push(link.href);
-    await browser.storage.local.set({ highlightList });
+  const normalizedHref = normalizeURL(link.href);
+  const linkSet = new Set(highlightList.map(normalizeURL));
+
+  if (!linkSet.has(normalizedHref)) {
+    linkSet.add(normalizedHref);
+    await browser.storage.local.set({ highlightList: Array.from(linkSet) });
 
     // Re-apply highlights immediately in current tab
-    highlightLinks(highlightList);
+    highlightLinks(linkSet);
   }
 });
 
@@ -24,23 +27,19 @@ function normalizeURL(url) {
   }
 }
 
-async function highlightLinks(links) {
-  const normalizedList = links.map(normalizeURL);
-
+async function highlightLinks(linkSet) {
   document.querySelectorAll('a').forEach(link => {
     const href = normalizeURL(link.href);
-    if (normalizedList.includes(href)) {
+    if (linkSet.has(href)) {
       link.classList.add('highlighted-link');
     }
   });
 }
 
-async function clearHighlights(links) {
-  const normalizedList = links.map(normalizeURL);
-
+async function clearHighlights(linkSet) {
   document.querySelectorAll('a').forEach(link => {
     const href = normalizeURL(link.href);
-    if (normalizedList.includes(href)) {
+    if (linkSet.has(href)) {
       link.classList.remove('highlighted-link');
     }
   });
@@ -50,9 +49,11 @@ async function clearHighlights(links) {
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && ('isActive' in changes || 'highlightList' in changes)) {
     browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highlightList }) => {
-      if (isActive && highlightList && highlightList.length) {
+      const normalizedSet = new Set(highlightList.map(normalizeURL));
+
+      if (isActive && normalizedSet.size > 0) {
         highlightLinks(highlightList);
-      } else if (highlightList && highlightList.length) {
+      } else if (normalizedSet.size > 0) {
         clearHighlight(highlightList);
       } else {
         // If list empty or inactive, remove all highlights globally
@@ -65,30 +66,38 @@ browser.storage.onChanged.addListener((changes, area) => {
 // On initial load, do the same check
 browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highlightList }) => {
   if (isActive && highlightList && highlightList.length) {
-    highlightLinks(highlightList);
-    observeDynamicLinks(highlightList);
+    const normalizedSet = new Set(highlightList.map(normalizeURL));
+
+    highlightLinks(normalizedSet);
+    observeDynamicLinks(normalizedSet);
   }
 });
 
 browser.runtime.onMessage.addListener((message) => {
+  const normalizedSet = new Set(message.links.map(normalizeURL));
+
   if (message.action === 'highlightLinks') {
-    highlightLinks(message.links);
+    highlightLinks(normalizedSet);
   }
 
   if (message.action === 'clearHighlights') {
-    clearHighlights(message.links);
+    clearHighlights(normalizedSet);
   }
 });
 
 let pending = false;
-function observeDynamicLinks(links) {
+function observeDynamicLinks() {
   const observer = new MutationObserver(() => {
     if (pending) return;
     pending = true;
-    setTimeout(() => {
-      highlightLinks(links);
+    setTimeout(async () => {
+      const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
+      if (isActive && highlightList.length) {
+        const normalizedSet = new Set(highlightList.map(normalizeURL));
+        highlightLinks(normalizedSet);
+      }
       pending = false;
-    }, 300); // small debounce
+    }, 1000); // debounce
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
@@ -99,10 +108,11 @@ setInterval(() => {
   if (location.href !== currentUrl) {
     currentUrl = location.href;
     // When URL changes (SPA navigation), re-highlight links
-    browser.storage.local.get(['isActive', 'myList']).then(({ isActive, myList }) => {
-      if (isActive && myList && myList.length) {
-        highlightLinks(myList);
+    browser.storage.local.get(['isActive', 'highlightList']).then(({ isActive, highlightList }) => {
+      if (isActive && highlightList.length) {
+        const normalizedSet = new Set(highlightList.map(normalizeURL));
+        highlightLinks(normalizedSet);
       }
     });
   }
-}, 500); // check every 0.5s
+}, 1000); // check every second

@@ -4,7 +4,7 @@ function sendHighlightsToTab(tabId) {
       // Explicitly send a clear message if inactive
       browser.tabs.sendMessage(tabId, {
         action: 'clearHighlights',
-        links: myList ?? []
+        links: highlightList ?? []
       }).catch(() => {});
       return;
     }
@@ -22,6 +22,6 @@ browser.tabs.onCreated.addListener(tab => {
 
 browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status === 'complete') {
-    setTimeout(() => sendHighlightsToTab(tabId), 500);
+    setTimeout(() => sendHighlightsToTab(tabId), 1000);
   }
 });
