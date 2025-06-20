@@ -3,7 +3,7 @@ document.addEventListener('mousedown', async (e) => {
   let link = e.target.closest('a');
   if (!link || !link.href) return;
 
-  const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
+  const { isActive, highlightList = [] } = await chrome.storage.local.get(['isActive', 'highlightList']);
   if (!isActive) return;
 
   const normalizedHref = normalizeURL(link.href);
@@ -11,7 +11,7 @@ document.addEventListener('mousedown', async (e) => {
 
   if (!linkSet.has(normalizedHref)) {
     linkSet.add(normalizedHref);
-    await browser.storage.local.set({ highlightList: Array.from(linkSet) });
+    await chrome.storage.local.set({ highlightList: Array.from(linkSet) });
   }
 });
 
@@ -37,7 +37,7 @@ let mutationObserver = null;
 
 // Main highlighting function
 async function setupHighlighting() {
-  const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
+  const { isActive, highlightList = [] } = await chrome.storage.local.get(['isActive', 'highlightList']);
 
   cleanupObservers();
 
@@ -106,7 +106,7 @@ function cleanupObservers() {
 }
 
 // Listen for changes in storage (toggle or list update)
-browser.storage.onChanged.addListener((changes, area) => {
+chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && ('isActive' in changes || 'highlightList' in changes)) {
     setupHighlighting();
   }
