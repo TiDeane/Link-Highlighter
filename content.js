@@ -12,9 +12,6 @@ document.addEventListener('mousedown', async (e) => {
   if (!linkSet.has(normalizedHref)) {
     linkSet.add(normalizedHref);
     await browser.storage.local.set({ highlightList: Array.from(linkSet) });
-
-    // Re-apply highlights immediately in current tab
-    setupHighlighting(linkSet);
   }
 });
 
@@ -41,25 +38,6 @@ function clearAllHighlights() {
     link.classList.remove('highlighted-link');
   });
 }
-
-// Listen for changes in storage (toggle or list update)
-browser.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && ('isActive' in changes || 'highlightList' in changes)) {
-    setupHighlighting();
-  }
-});
-
-
-// On initial load, do the same check
-(async () => {
-  const { isActive, highlightList = [] } = await browser.storage.local.get(['isActive', 'highlightList']);
-  if (isActive && highlightList.length) {
-    const normalizedSet = new Set(highlightList.map(normalizeURL));
-
-    setupHighlighting(normalizedSet);
-    observeDynamicLinks(normalizedSet);
-  }
-});
 
 let linkObserver = null;
 let mutationObserver = null;
@@ -127,14 +105,12 @@ function cleanupObservers() {
   }
 }
 
-// Highlights when the URL changes (SPA navigation)
-let currentUrl = location.href;
-setInterval(() => {
-  if (location.href !== currentUrl) {
-    currentUrl = location.href;
+// Listen for changes in storage (toggle or list update)
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && ('isActive' in changes || 'highlightList' in changes)) {
     setupHighlighting();
   }
-}, 500);
+});
 
 // Run once on page load
 setupHighlighting();
