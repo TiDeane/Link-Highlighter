@@ -14,3 +14,4 @@ For this to work on Linkedin, it was necessary to normalize URLs and strip query
 
 - Make popup prettier
 - Add option to customize URL normalization
+- Add option to customize highlighting color?

@@ -1,4 +1,5 @@
 .highlighted-link {
+  display: inline-block;
   background-color: yellow;
   outline: 2px solid orange;
 }
