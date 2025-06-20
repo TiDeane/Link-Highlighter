@@ -24,19 +24,12 @@ function normalizeURL(url) {
   }
 }
 
-function clearHighlights(linkSet) {
-  document.querySelectorAll('a.highlighted-link').forEach(link => {
-    const href = normalizeURL(link.href);
-    if (linkSet.has(href)) {
-      link.classList.remove('highlighted-link');
-    }
-  });
-}
-
 function clearAllHighlights() {
   document.querySelectorAll('a.highlighted-link').forEach(link => {
     link.classList.remove('highlighted-link');
   });
+
+  cleanupObservers();
 }
 
 let linkObserver = null;
@@ -85,10 +78,17 @@ function observeNewLinks(linkObserver) {
     mutationObserver.disconnect();
   }
 
-  mutationObserver = new MutationObserver(() => {
-    if (linkObserver) {
-      document.querySelectorAll('a[href]').forEach(link => linkObserver.observe(link));
-    }
+  mutationObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.matches && node.matches('a[href]')) {
+            linkObserver.observe(node);
+          }
+          node.querySelectorAll && node.querySelectorAll('a[href]').forEach(linkObserver.observe, linkObserver);
+        }
+      });
+    });
   });
 
   mutationObserver.observe(document.body, { childList: true, subtree: true });
