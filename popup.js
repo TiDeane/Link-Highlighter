@@ -10,12 +10,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       await browser.storage.local.set({ isActive: true });
     } else {
       await browser.storage.local.set({ highlightList: [], isActive: false });
-
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
-        browser.tabs.sendMessage(tab.id, { action: 'clearHighlights' }).catch(() => {
-        });
-      }
     }
   });
 });

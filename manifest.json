@@ -1,17 +1,13 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Link Highlighter",
   "version": "1.2",
   "description": "Highlights clicked links while enabled.",
-  "browser_action": {
+  "action": {
     "default_popup": "popup.html",
     "default_icon": {
       "48": "icons/icon.png"
     }
-  },
-  "background": {
-    "scripts": ["background.js"],
-    "persistent": true
   },
   "permissions": ["storage", "scripting", "activeTab"],
   "content_scripts": [
