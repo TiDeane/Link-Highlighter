@@ -2,7 +2,7 @@
 
 Just a simple extension that highlights all links opened while the extension was toggled on. Made with Linkedin in mind.
 
-#### Works on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and Chrome (no official page on Chrome yet).
+#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and Chrome (no official page on Chrome yet).
 
 ---
 
@@ -12,6 +12,6 @@ For this to work on Linkedin, it was necessary to normalize URLs and strip query
 
 ### Plans for future updates:
 
-- Make popup prettier
-- Add option to customize URL normalization
-- Add option to customize highlighting color?
+- Make popup prettier (already implemented, not yet submitted)
+- Add option to customize URL normalization (in progress)
+- Add option to customize highlighting color

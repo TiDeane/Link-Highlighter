@@ -1,14 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <style>
-    body { min-width: 200px; padding: 10px; font-family: sans-serif; }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <label>
-    <input type="checkbox" id="toggle"> Highlight Clicked Links
+<body id="popup-body">
+  <h1 class="popup-header">Link Highlighter</h1>
+  
+  <!-- Main toggle for highlighting links -->
+  <label class="toggle-container">
+    <input type="checkbox" id="toggle">
+    <span>Highlight Clicked Links</span>
   </label>
+
+  <!-- Advanced Options -->
+  <div class="advanced-options">
+    <div class="section-header" id="advanced-toggle">
+      <span>Advanced Options</span>
+      <span class="arrow">&#x25BC;</span>
+    </div>
+
+    <div class="options-container">
+      <!-- Query Parameters toggle -->
+      <label class="toggle-container">
+        <input type="checkbox" id="normalize-query" checked>
+        <span>Normalize Query Parameters</span>
+      </label>
+
+      <!-- Hash Fragments toggle -->
+      <label class="toggle-container">
+        <input type="checkbox" id="normalize-hash" checked>
+        <span>Normalize Hash Fragments</span>
+      </label>
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>
