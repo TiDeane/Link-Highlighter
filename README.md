@@ -13,5 +13,5 @@ For this to work on Linkedin, it was necessary to normalize URLs and strip query
 ### Plans for future updates:
 
 - Make popup prettier (already implemented, not yet submitted)
-- Add option to customize URL normalization (in progress)
+- Add option to customize URL normalization (already implemented, not yet submitted)
 - Add option to customize highlighting color

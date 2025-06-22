@@ -1,9 +1,19 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const toggle = document.getElementById('toggle');
+  const normalizeQuery = document.getElementById('normalize-query');
+  const normalizeHash = document.getElementById('normalize-hash');
 
   // Restore saved state
-  const { isActive } = await chrome.storage.local.get('isActive');
-  toggle.checked = !!isActive;
+  const { isActive, normalizeQueryParams, normalizeHashFragments } =
+    await chrome.storage.local.get({
+      isActive: false,
+      normalizeQueryParams: true,
+      normalizeHashFragments: true
+    });
+
+  toggle.checked = isActive;
+  normalizeQuery.checked = normalizeQueryParams;
+  normalizeHash.checked = normalizeHashFragments;
 
   toggle.addEventListener('change', async () => {
     if (toggle.checked) {
@@ -11,6 +21,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       await chrome.storage.local.set({ highlightList: [], isActive: false });
     }
+  });
+
+  normalizeQuery.addEventListener('change', async () => {
+    await chrome.storage.local.set({ normalizeQueryParams: normalizeQuery.checked });
+  });
+
+  normalizeHash.addEventListener('change', async () => {
+    await chrome.storage.local.set({ normalizeHashFragments: normalizeHash.checked });
   });
 });
 

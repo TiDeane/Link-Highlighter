@@ -1,3 +1,10 @@
+let normalizeQueryParams = true;
+let normalizeHashFragments = true;
+
+chrome.storage.local.get({ normalizeQueryParams, normalizeHashFragments})
+  .then(settings => {({ normalizeQueryParams, normalizeHashFragments } = settings);
+});
+
 // Save opened links
 document.addEventListener('mousedown', async (e) => {
   let link = e.target.closest('a');
@@ -18,7 +25,9 @@ document.addEventListener('mousedown', async (e) => {
 function normalizeURL(url) {
   try {
     const u = new URL(url);
-    return u.origin + u.pathname.replace(/\/$/, '');
+    if (normalizeQueryParams) u.search = '';
+    if (normalizeHashFragments) u.hash = '';
+    return u.origin + u.pathname.replace(/\/$/, '') + u.search + u.hash;
   } catch {
     return url;
   }
@@ -35,9 +44,10 @@ function clearAllHighlights() {
 let linkObserver = null;
 let mutationObserver = null;
 
-// Main highlighting function
+/* Main highlighting function */
 async function setupHighlighting() {
   const { isActive, highlightList = [] } = await chrome.storage.local.get(['isActive', 'highlightList']);
+  // console.log(highlightList);
 
   cleanupObservers();
 
@@ -72,7 +82,7 @@ async function setupHighlighting() {
   observeNewLinks(linkObserver);
 }
 
-// Watch for new <a> elements being added to the DOM
+/* Watch for new <a> elements being added to the DOM */
 function observeNewLinks(linkObserver) {
   if (mutationObserver) {
     mutationObserver.disconnect();
@@ -105,12 +115,26 @@ function cleanupObservers() {
   }
 }
 
-// Listen for changes in storage (toggle or list update)
+/* Listen for changes in storage (toggle or list update) */
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && ('isActive' in changes || 'highlightList' in changes)) {
+  if (area != 'local') return;
+
+  // Reapply highlighting if a normalization rule was turned on
+  let normalizationEnabled = false;
+
+  if ('normalizeQueryParams' in changes) {
+    normalizeQueryParams = changes.normalizeQueryParams.newValue;
+    if (normalizeQueryParams) normalizationEnabled = true;
+  }
+  if ('normalizeHashFragments' in changes) {
+    normalizeHashFragments = changes.normalizeHashFragments.newValue;
+    if (normalizeHashFragments) normalizationEnabled = true;
+  }
+
+  if ('isActive' in changes || 'highlightList' in changes || normalizationEnabled) {
     setupHighlighting();
   }
 });
 
-// Run once on page load
+/* Run once on page load */
 setupHighlighting();
