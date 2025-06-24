@@ -2,7 +2,7 @@
 
 A simple browser extension that highlights all links opened on any tab while the extension was toggled on. Geared towards recruiters, researchers, or anyone wanting to keep track of which links they've opened.
 
-#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and Chrome (no official page on Chrome yet).
+#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and Chrome (awaiting review).
 
 ---
 
@@ -12,11 +12,11 @@ A simple browser extension that highlights all links opened on any tab while the
 
 - A researcher can stay oriented in long-form content, seeing at a glance which pages, or even which sections, they’ve already explored.
 
-- Or any situation where someone might want to keep track of which links they've visited (e.g. movies on Letterboxd, links on Google Searc, etc.)
+- Or any situation where someone might want to keep track of which links they've visited (e.g. movies on Letterboxd, links on Google Search, etc.)
 
 ### Advanced Options
 
-By default, this extension normalizes all URLs by removing all query parameters and hash fragments. **This leads to ideal results on Linkedin**.
+By default, this extension normalizes all URLs by removing all query parameters and hash fragments. **This leads to ideal results on LinkedIn**.
 
 However, normalizing URLs may lead to results that aren't ideal on other websites. For this reason, URL normalization is customizable under "**Advanced Options**" on the popup:
 

@@ -37,8 +37,6 @@ function clearAllHighlights() {
   document.querySelectorAll('a.highlighted-link').forEach(link => {
     link.classList.remove('highlighted-link');
   });
-
-  cleanupObservers();
 }
 
 let linkObserver = null;
@@ -49,12 +47,12 @@ async function setupHighlighting() {
   const { isActive, highlightList = [] } = await chrome.storage.local.get(['isActive', 'highlightList']);
   // console.log(highlightList);
 
+  cleanupObservers()
+
   if (!isActive || highlightList.length === 0) {
     clearAllHighlights();
     return;
   }
-
-  cleanupObservers();
 
   const highlightSet = new Set(highlightList.map(normalizeURL));
 

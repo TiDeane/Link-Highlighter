@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Link Highlighter",
-  "version": "1.4",
-  "description": "Highlights clicked links while enabled.",
+  "version": "1.5",
+  "description": "Highlights all links opened while enabled.",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
       "48": "icons/icon.png"
     }
   },
-  "permissions": ["storage", "scripting", "activeTab"],
+  "permissions": ["storage", "scripting"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
