@@ -128,19 +128,15 @@ function cleanupObservers() {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area != 'local') return;
 
-  // Reapply highlighting if a normalization rule was turned on
-  let normalizationEnabled = false;
-
   if ('normalizeQueryParams' in changes) {
     normalizeQueryParams = changes.normalizeQueryParams.newValue;
-    if (normalizeQueryParams) normalizationEnabled = true;
-  }
-  if ('normalizeHashFragments' in changes) {
+    if (!normalizeQueryParams) clearAllHighlights();
+  } else if ('normalizeHashFragments' in changes) {
     normalizeHashFragments = changes.normalizeHashFragments.newValue;
-    if (normalizeHashFragments) normalizationEnabled = true;
+    if (!normalizeHashFragments) clearAllHighlights();
   }
 
-  if ('isActive' in changes || 'highlightList' in changes || normalizationEnabled) {
+  if ('isActive' in changes || 'highlightList' in changes || 'normalizeQueryParams' in changes || 'normalizeHashFragments' in changes) {
     setupHighlighting();
   }
 });
