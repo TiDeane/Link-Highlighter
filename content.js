@@ -49,70 +49,79 @@ async function setupHighlighting() {
   const { isActive, highlightList = [] } = await chrome.storage.local.get(['isActive', 'highlightList']);
   // console.log(highlightList);
 
-  cleanupObservers();
-
   if (!isActive || highlightList.length === 0) {
     clearAllHighlights();
     return;
   }
 
+  cleanupObservers();
+
   const highlightSet = new Set(highlightList.map(normalizeURL));
 
   // one observer for all links
   linkObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const link = entry.target;
-        const normalizedHref = normalizeURL(link.href);
-        if (highlightSet.has(normalizedHref)) {
-          link.classList.add('highlighted-link');
-          linkObserver.unobserve(link);
-        }
-      }
-    });
-  }, {
-    root: null,
-    threshold: 0.1
-  });
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
 
-  document.querySelectorAll('a[href]').forEach(link => {
-    linkObserver.observe(link);
-  });
+      const link = entry.target;
+      const normalizedHref = normalizeURL(link.href);
+
+      if (highlightSet.has(normalizedHref)) {
+        link.classList.add('highlighted-link');
+      }
+
+      linkObserver.unobserve(link);
+    }
+  }, { root: null, threshold: 0.1, rootMargin: '100px' });
+
+  document.querySelectorAll('a[href]').forEach(link => { linkObserver.observe(link); });
 
   observeNewLinks(linkObserver);
 }
 
 /* Watch for new <a> elements being added to the DOM */
 function observeNewLinks(linkObserver) {
-  if (mutationObserver) {
-    mutationObserver.disconnect();
-  }
+  if (mutationObserver) mutationObserver.disconnect();
 
   mutationObserver = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          if (node.matches && node.matches('a[href]')) {
-            linkObserver.observe(node);
-          }
-          node.querySelectorAll && node.querySelectorAll('a[href]').forEach(linkObserver.observe, linkObserver);
+    for (const mutation of mutations) {
+      // Unobserve removed links
+      for (const node of mutation.removedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+        if (node.matches && node.matches('a[href]')) {
+          linkObserver.unobserve(node);
         }
-      });
-    });
+
+        if (node.querySelectorAll) {
+          node.querySelectorAll('a[href]').forEach(link => linkObserver.unobserve(link));
+        }
+      }
+
+      // Observe added links
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+        if (node.matches && node.matches('a[href]')) {
+          linkObserver.observe(node);
+        }
+
+        if (node.querySelectorAll) {
+          node.querySelectorAll('a[href]').forEach(link => { linkObserver.observe(link); });
+        }
+      }
+    }
   });
 
   mutationObserver.observe(document.body, { childList: true, subtree: true });
 }
 
 function cleanupObservers() {
-  if (linkObserver) {
-    linkObserver.disconnect();
-    linkObserver = null;
-  }
-  if (mutationObserver) {
-    mutationObserver.disconnect();
-    mutationObserver = null;
-  }
+  if (linkObserver) linkObserver.disconnect();
+  if (mutationObserver) mutationObserver.disconnect();
+
+  mutationObserver = null;
+  linkObserver = null;
 }
 
 /* Listen for changes in storage (toggle or list update) */
