@@ -9,7 +9,7 @@
       "48": "icons/icon.png"
     }
   },
-  "permissions": ["storage", "scripting"],
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
