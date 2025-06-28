@@ -5,7 +5,7 @@ chrome.storage.local.get({ normalizeQueryParams, normalizeHashFragments})
   .then(settings => {({ normalizeQueryParams, normalizeHashFragments } = settings);
 });
 
-// Save opened links
+/* Save opened links */
 document.addEventListener('mousedown', async (e) => {
   let link = e.target.closest('a');
   if (!link || !link.href) return;

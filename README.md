@@ -2,11 +2,11 @@
 
 A simple browser extension that highlights all links opened on any tab while the extension was toggled on. Geared towards recruiters, researchers, or anyone wanting to keep track of which links they've opened.
 
-#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and Chrome (awaiting review).
+#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and [Chrome](https://chromewebstore.google.com/detail/link-highlighter/hbdaiciogdfmibiekklhllpbldhodbil?authuser=0&hl=en-GB).
 
 ---
 
-### **Use case**s
+### Use cases
 
 - A recruiter browsing candidate profiles on LinkedIn can instantly see which profiles they’ve already reviewed.
 
@@ -29,3 +29,14 @@ However, normalizing URLs may lead to results that aren't ideal on other website
   Strips everything after `#` → treats section-anchor links as one page.
   - **Example**: ``https://en.wikipedia.org/wiki/JavaScript#Syntax`` → becomes ``https://en.wikipedia.org/wiki/JavaScript``.
   - **Use case**: Wikipedia uses ``#`` to jump to specific sections, so if you want to track which sections you’ve visited, turn off hash fragment normalization so each section link remains distinct.
+
+
+## Example Images
+
+![LinkedIn with normalized query parameters](images/linkedinrecruiternormalizequerysmall.png)
+
+![LinkedIn feed](./images/linkedinfeed.png)
+
+![Wikipedia with hash fragment normalizaiton](images/wikipedianormalizehashsmall.png)
+
+![Letterboxd](images/letterboxdsmall.png)
