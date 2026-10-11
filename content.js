@@ -1,8 +1,20 @@
 let normalizeQueryParams = true;
 let normalizeHashFragments = true;
 
-chrome.storage.local.get({ normalizeQueryParams, normalizeHashFragments})
-  .then(settings => {({ normalizeQueryParams, normalizeHashFragments } = settings);
+/* In-memory mirror of storage, kept in sync by storage.onChanged */
+let isActive = false;
+let storedList = [];          // highlightList exactly as stored
+let highlightSet = new Set(); // storedList normalized with the current settings
+
+const stateLoaded = chrome.storage.local.get({
+  isActive: false,
+  highlightList: [],
+  normalizeQueryParams: true,
+  normalizeHashFragments: true
+}).then(state => {
+  ({ isActive, normalizeQueryParams, normalizeHashFragments } = state);
+  storedList = state.highlightList;
+  highlightSet = new Set(storedList.map(normalizeURL));
 });
 
 /* Save opened links */
@@ -10,15 +22,19 @@ document.addEventListener('mousedown', async (e) => {
   let link = e.target.closest('a');
   if (!link || !link.href) return;
 
-  const { isActive, highlightList = [] } = await chrome.storage.local.get(['isActive', 'highlightList']);
+  await stateLoaded;
   if (!isActive) return;
 
   const normalizedHref = normalizeURL(link.href);
-  const linkSet = new Set(highlightList.map(normalizeURL));
 
-  if (!linkSet.has(normalizedHref)) {
-    linkSet.add(normalizedHref);
-    await chrome.storage.local.set({ highlightList: Array.from(linkSet) });
+  if (!highlightSet.has(normalizedHref)) {
+    // Update locally right away, so rapid clicks don't overwrite each other
+    highlightSet.add(normalizedHref);
+    storedList = Array.from(highlightSet);
+    if (linkObserver) highlightMatchingLinks(new Set([normalizedHref]));
+    else setupHighlighting();
+
+    await chrome.storage.local.set({ highlightList: storedList });
   }
 });
 
@@ -39,22 +55,28 @@ function clearAllHighlights() {
   });
 }
 
+/* Highlight links matching newly added URLs, without rebuilding the observers */
+function highlightMatchingLinks(addedSet) {
+  document.querySelectorAll('a[href]:not(.highlighted-link)').forEach(link => {
+    if (addedSet.has(normalizeURL(link.href))) {
+      link.classList.add('highlighted-link');
+    }
+  });
+}
+
 let linkObserver = null;
 let mutationObserver = null;
 
 /* Main highlighting function */
 async function setupHighlighting() {
-  const { isActive, highlightList = [] } = await chrome.storage.local.get(['isActive', 'highlightList']);
-  // console.log(highlightList);
+  await stateLoaded;
 
   cleanupObservers()
 
-  if (!isActive || highlightList.length === 0) {
+  if (!isActive || highlightSet.size === 0) {
     clearAllHighlights();
     return;
   }
-
-  const highlightSet = new Set(highlightList.map(normalizeURL));
 
   // one observer for all links
   linkObserver = new IntersectionObserver((entries) => {
@@ -64,9 +86,8 @@ async function setupHighlighting() {
       const link = entry.target;
       const normalizedHref = normalizeURL(link.href);
 
-      if (highlightSet.has(normalizedHref)) {
-        link.classList.add('highlighted-link');
-      }
+      // toggle (not add), since a re-checked link's href may have changed
+      link.classList.toggle('highlighted-link', highlightSet.has(normalizedHref));
 
       linkObserver.unobserve(link);
     }
@@ -77,12 +98,24 @@ async function setupHighlighting() {
   observeNewLinks(linkObserver);
 }
 
-/* Watch for new <a> elements being added to the DOM */
+/* Watch for new <a> elements being added to the DOM, and for existing ones
+   getting their href set or their highlight class wiped by a page re-render */
 function observeNewLinks(linkObserver) {
   if (mutationObserver) mutationObserver.disconnect();
 
   mutationObserver = new MutationObserver(mutations => {
     for (const mutation of mutations) {
+      if (mutation.type === 'attributes') {
+        const link = mutation.target;
+        if (link.tagName !== 'A' || !link.hasAttribute('href')) continue;
+
+        // Re-check links whose href changed or that lost their highlight
+        if (mutation.attributeName === 'href' || !link.classList.contains('highlighted-link')) {
+          linkObserver.observe(link);
+        }
+        continue;
+      }
+
       // Unobserve removed links
       for (const node of mutation.removedNodes) {
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
@@ -111,7 +144,12 @@ function observeNewLinks(linkObserver) {
     }
   });
 
-  mutationObserver.observe(document.body, { childList: true, subtree: true });
+  mutationObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['href', 'class']
+  });
 }
 
 function cleanupObservers() {
@@ -123,8 +161,12 @@ function cleanupObservers() {
 }
 
 /* Listen for changes in storage (toggle or list update) */
-chrome.storage.onChanged.addListener((changes, area) => {
+chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area != 'local') return;
+
+  await stateLoaded;
+
+  const settingsChanged = 'normalizeQueryParams' in changes || 'normalizeHashFragments' in changes;
 
   if ('normalizeQueryParams' in changes) {
     normalizeQueryParams = changes.normalizeQueryParams.newValue;
@@ -134,7 +176,22 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (!normalizeHashFragments) clearAllHighlights();
   }
 
-  if ('isActive' in changes || 'highlightList' in changes || 'normalizeQueryParams' in changes || 'normalizeHashFragments' in changes) {
+  if ('isActive' in changes) isActive = changes.isActive.newValue;
+  if ('highlightList' in changes) storedList = changes.highlightList.newValue ?? [];
+
+  if (!('isActive' in changes || 'highlightList' in changes || settingsChanged)) return;
+
+  const oldSet = highlightSet;
+  highlightSet = new Set(storedList.map(normalizeURL));
+
+  // Common case: only new links were added (a click in this or another tab)
+  const onlyAdded = !('isActive' in changes) && !settingsChanged && linkObserver &&
+    [...oldSet].every(url => highlightSet.has(url));
+
+  if (onlyAdded) {
+    const addedSet = new Set([...highlightSet].filter(url => !oldSet.has(url)));
+    if (addedSet.size > 0) highlightMatchingLinks(addedSet);
+  } else {
     setupHighlighting();
   }
 });
