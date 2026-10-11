@@ -48,6 +48,36 @@ label {
   font-size: 15px;
 }
 
+#popup-body .clear-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#popup-body .clear-container button {
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#popup-body .clear-container button:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+#popup-body .clear-container button:disabled {
+  color: #999;
+  cursor: default;
+}
+
+#popup-body #clear-confirm {
+  color: #c62828;
+  border-color: #c62828;
+  font-weight: bold;
+}
+
 .advanced-options {
   margin-top: 20px;
   margin-bottom: -25px;

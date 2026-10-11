@@ -2,17 +2,19 @@ let normalizeQueryParams = true;
 let normalizeHashFragments = true;
 
 /* In-memory mirror of storage, kept in sync by storage.onChanged */
-let isActive = false;
+let isActive = false;       // whether newly opened links are saved
+let showHighlights = true;  // whether saved links are highlighted
 let storedList = [];          // highlightList exactly as stored
 let highlightSet = new Set(); // storedList normalized with the current settings
 
 const stateLoaded = chrome.storage.local.get({
   isActive: false,
+  showHighlights: true,
   highlightList: [],
   normalizeQueryParams: true,
   normalizeHashFragments: true
 }).then(state => {
-  ({ isActive, normalizeQueryParams, normalizeHashFragments } = state);
+  ({ isActive, showHighlights, normalizeQueryParams, normalizeHashFragments } = state);
   storedList = state.highlightList;
   highlightSet = new Set(storedList.map(normalizeURL));
 });
@@ -38,7 +40,7 @@ document.addEventListener('mousedown', async (e) => {
     highlightSet.add(normalizedHref);
     storedList = Array.from(highlightSet);
     if (linkObserver) highlightMatchingLinks(new Set([normalizedHref]));
-    else setupHighlighting();
+    else if (showHighlights) setupHighlighting();
 
     await chrome.storage.local.set({ highlightList: storedList });
   }
@@ -90,7 +92,7 @@ async function setupHighlighting() {
 
   cleanupObservers()
 
-  if (!isActive || highlightSet.size === 0) {
+  if (!showHighlights || highlightSet.size === 0) {
     clearAllHighlights();
     return;
   }
@@ -178,7 +180,7 @@ function cleanupObservers() {
   linkObserver = null;
 }
 
-/* Listen for changes in storage (toggle or list update) */
+/* Listen for changes in storage (toggles, settings or list update) */
 chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area != 'local') return;
 
@@ -195,15 +197,16 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
   }
 
   if ('isActive' in changes) isActive = changes.isActive.newValue;
+  if ('showHighlights' in changes) showHighlights = changes.showHighlights.newValue ?? true;
   if ('highlightList' in changes) storedList = changes.highlightList.newValue ?? [];
 
-  if (!('isActive' in changes || 'highlightList' in changes || settingsChanged)) return;
+  if (!('showHighlights' in changes || 'highlightList' in changes || settingsChanged)) return;
 
   const oldSet = highlightSet;
   highlightSet = new Set(storedList.map(normalizeURL));
 
   // Common case: only new links were added (a click in this or another tab)
-  const onlyAdded = !('isActive' in changes) && !settingsChanged && linkObserver &&
+  const onlyAdded = !('showHighlights' in changes) && !settingsChanged && linkObserver &&
     [...oldSet].every(url => highlightSet.has(url));
 
   if (onlyAdded) {

@@ -6,11 +6,23 @@
 <body id="popup-body">
   <h1 class="popup-header">Link Highlighter</h1>
   
-  <!-- Main toggle for highlighting links -->
+  <!-- Whether newly opened links are saved -->
   <label class="toggle-container">
     <input type="checkbox" id="toggle">
-    <span>Highlight Clicked Links</span>
+    <span>Track Opened Links</span>
   </label>
+
+  <!-- Whether saved links are highlighted on pages -->
+  <label class="toggle-container">
+    <input type="checkbox" id="show-highlights">
+    <span>Show Highlights</span>
+  </label>
+
+  <!-- Clear saved links, with a confirmation step -->
+  <div class="clear-container">
+    <button type="button" id="clear">Clear Highlights (<span id="link-count">0</span>)</button>
+    <button type="button" id="clear-confirm" hidden>Are you sure?</button>
+  </div>
 
   <!-- Advanced Options -->
   <div class="advanced-options">
