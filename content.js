@@ -22,6 +22,12 @@ document.addEventListener('mousedown', async (e) => {
   let link = e.target.closest('a');
   if (!link || !link.href) return;
 
+  // The extension was reloaded or updated, and this copy of the script is orphaned
+  if (!chrome.runtime?.id) {
+    cleanupObservers();
+    return;
+  }
+
   await stateLoaded;
   if (!isActive) return;
 
