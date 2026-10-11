@@ -107,7 +107,11 @@ label {
 /* ----- Highlighting Styling ----- */
 
 .highlighted-link {
-  display: inline-block;
   background-color: rgba(255, 255, 0, 0.7);
   outline: 2px solid orange;
+}
+
+/* Only added to links whose own display is plain inline */
+.highlighted-link-inline {
+  display: inline-block;
 }

@@ -49,18 +49,29 @@ function normalizeURL(url) {
   }
 }
 
+function highlightLink(link) {
+  // inline-block lets the highlight wrap images and block content, but it would
+  // break links that have their own layout (flex nav items, etc.), so it's only
+  // applied to plain inline links
+  if (getComputedStyle(link).display === 'inline') {
+    link.classList.add('highlighted-link', 'highlighted-link-inline');
+  } else {
+    link.classList.add('highlighted-link');
+  }
+}
+
+function unhighlightLink(link) {
+  link.classList.remove('highlighted-link', 'highlighted-link-inline');
+}
+
 function clearAllHighlights() {
-  document.querySelectorAll('a.highlighted-link').forEach(link => {
-    link.classList.remove('highlighted-link');
-  });
+  document.querySelectorAll('a.highlighted-link').forEach(unhighlightLink);
 }
 
 /* Highlight links matching newly added URLs, without rebuilding the observers */
 function highlightMatchingLinks(addedSet) {
   document.querySelectorAll('a[href]:not(.highlighted-link)').forEach(link => {
-    if (addedSet.has(normalizeURL(link.href))) {
-      link.classList.add('highlighted-link');
-    }
+    if (addedSet.has(normalizeURL(link.href))) highlightLink(link);
   });
 }
 
@@ -86,8 +97,9 @@ async function setupHighlighting() {
       const link = entry.target;
       const normalizedHref = normalizeURL(link.href);
 
-      // toggle (not add), since a re-checked link's href may have changed
-      link.classList.toggle('highlighted-link', highlightSet.has(normalizedHref));
+      // A re-checked link's href may have changed, so the highlight can also be removed
+      if (!highlightSet.has(normalizedHref)) unhighlightLink(link);
+      else if (!link.classList.contains('highlighted-link')) highlightLink(link);
 
       linkObserver.unobserve(link);
     }
