@@ -136,13 +136,14 @@ describe('URL normalization', () => {
     <a id="other" href="https://site.test/other">other</a>
   `;
 
-  test('by default, strips the query, the hash and a trailing slash', async () => {
+  test('saves the full link, whatever the normalization settings are', async () => {
     const storage = createStorage({ isActive: true });
     const page = await openPage(storage, '<a id="a" href="https://site.test/profile/?tab=repos#about">A</a>');
 
     await page.mousedown('#a');
 
-    assert.deepEqual(storage.data.highlightList, ['https://site.test/profile']);
+    // Only the trailing slash of the path is dropped
+    assert.deepEqual(storage.data.highlightList, ['https://site.test/profile?tab=repos#about']);
   });
 
   test('by default, every variant of a saved page is highlighted', async () => {
@@ -207,19 +208,74 @@ describe('URL normalization', () => {
     assert.deepEqual(storage.data.highlightList, list);
   });
 
-  test('the next tracked click saves the whole list in its normalized form', async () => {
-    const storage = createStorage({
-      isActive: true,
-      normalizeQueryParams: false,
-      highlightList: ['https://site.test/profile?tab=repos', 'https://site.test/profile?tab=stars']
-    });
+  test('saving a new link never rewrites the links saved before it', async () => {
+    const list = ['https://site.test/profile?tab=repos', 'https://site.test/profile?tab=stars'];
+    const storage = createStorage({ isActive: true, normalizeQueryParams: false, highlightList: list });
     const page = await openPage(storage, VARIANTS);
 
     await storage.local.set({ normalizeQueryParams: true });
     await settle();
     await page.mousedown('#other');
 
-    assert.deepEqual(storage.data.highlightList, ['https://site.test/profile', 'https://site.test/other']);
+    assert.deepEqual(storage.data.highlightList, [...list, 'https://site.test/other']);
+  });
+
+  test('sections opened while hash normalization is on are remembered one by one when it is turned off', async () => {
+    const storage = createStorage({ isActive: true });
+    const page = await openPage(storage, `
+      <a id="s1" href="https://wiki.test/JavaScript#History">History</a>
+      <a id="s2" href="https://wiki.test/JavaScript#Syntax">Syntax</a>
+      <a id="s3" href="https://wiki.test/JavaScript#Security">Security</a>
+      <a id="s4" href="https://wiki.test/JavaScript#Trademark">Trademark</a>
+      <a id="top" href="https://wiki.test/JavaScript">JavaScript</a>
+    `);
+
+    await page.mousedown('#s1');
+    await page.mousedown('#s2');
+    await page.mousedown('#s3');
+    assert.deepEqual(page.highlighted(), ['s1', 's2', 's3', 's4', 'top'], 'normalization on: one page');
+    assert.equal(storage.data.highlightList.length, 3);
+
+    await storage.local.set({ normalizeHashFragments: false });
+    await settle();
+    assert.deepEqual(page.highlighted(), ['s1', 's2', 's3'], 'normalization off: the three sections');
+
+    await storage.local.set({ normalizeHashFragments: true });
+    await settle();
+    assert.deepEqual(page.highlighted(), ['s1', 's2', 's3', 's4', 'top']);
+
+    await storage.local.set({ normalizeHashFragments: false });
+    await settle();
+    assert.deepEqual(page.highlighted(), ['s1', 's2', 's3']);
+  });
+
+  test('profile tabs opened while query normalization is on are remembered one by one when it is turned off', async () => {
+    const storage = createStorage({ isActive: true });
+    const page = await openPage(storage, `
+      <a id="repos" href="https://git.test/user?tab=repositories">Repositories</a>
+      <a id="stars" href="https://git.test/user?tab=stars">Stars</a>
+      <a id="projects" href="https://git.test/user?tab=projects">Projects</a>
+    `);
+
+    await page.mousedown('#repos');
+    await page.mousedown('#stars');
+    assert.deepEqual(page.highlighted(), ['repos', 'stars', 'projects']);
+
+    await storage.local.set({ normalizeQueryParams: false });
+    await settle();
+
+    assert.deepEqual(page.highlighted(), ['repos', 'stars']);
+  });
+
+  test('the same full link is still only saved once', async () => {
+    const storage = createStorage({ isActive: true });
+    const page = await openPage(storage, '<a id="a" href="https://wiki.test/Page#Section">A</a><a id="b" href="https://wiki.test/Page/#Section">same, with a slash</a>');
+
+    await page.mousedown('#a');
+    await page.mousedown('#b');
+    await page.mousedown('#a');
+
+    assert.deepEqual(storage.data.highlightList, ['https://wiki.test/Page#Section']);
   });
 });
 

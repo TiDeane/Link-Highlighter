@@ -4,7 +4,7 @@ let normalizeHashFragments = true;
 /* In-memory mirror of storage, kept in sync by storage.onChanged */
 let isActive = false;       // whether newly opened links are saved
 let showHighlights = true;  // whether saved links are highlighted
-let storedList = [];          // highlightList exactly as stored
+let storedList = [];          // highlightList exactly as stored: full links
 let highlightSet = new Set(); // storedList normalized with the current settings
 const pendingLinks = new Set(); // links saved by this tab whose write hasn't finished yet
 
@@ -42,30 +42,34 @@ document.addEventListener('mousedown', async (e) => {
   await stateLoaded;
   if (!isActive) return;
 
-  const normalizedHref = normalizeURL(link.href);
+  // Links are saved in full, whatever the normalization settings are, so that the
+  // settings can be changed later without forgetting which exact links were opened
+  const fullHref = fullURL(link.href);
+  if (storedList.includes(fullHref) || pendingLinks.has(fullHref)) return;
+  pendingLinks.add(fullHref);
 
+  // Update locally right away, so the link is highlighted before the write finishes
+  const normalizedHref = normalizeURL(fullHref);
   if (!highlightSet.has(normalizedHref)) {
-    // Update locally right away, so the link is highlighted before the write finishes
     highlightSet.add(normalizedHref);
-    pendingLinks.add(normalizedHref);
     if (linkObserver) highlightMatchingLinks(new Set([normalizedHref]));
     else if (showHighlights) setupHighlighting();
-
-    // Add to what is in storage right now, not to this tab's copy: the copy can be
-    // behind (another tab saved a link at the same moment, or this tab was frozen
-    // or in the back/forward cache and missed changes), and writing it back would
-    // drop those links. Then read back once: if another tab's write landed in
-    // between and replaced ours, add the link again
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const { highlightList = [] } = await chrome.storage.local.get('highlightList');
-      const merged = new Set(highlightList.map(normalizeURL));
-      if ([...pendingLinks].every(url => merged.has(url))) break;
-
-      pendingLinks.forEach(url => merged.add(url));
-      await chrome.storage.local.set({ highlightList: Array.from(merged) });
-    }
-    pendingLinks.delete(normalizedHref);
   }
+
+  // Add to what is in storage right now, not to this tab's copy: the copy can be
+  // behind (another tab saved a link at the same moment, or this tab was frozen
+  // or in the back/forward cache and missed changes), and writing it back would
+  // drop those links. Then read back once: if another tab's write landed in
+  // between and replaced ours, add the link again
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { highlightList = [] } = await chrome.storage.local.get('highlightList');
+    const merged = new Set(highlightList);
+    if ([...pendingLinks].every(url => merged.has(url))) break;
+
+    pendingLinks.forEach(url => merged.add(url));
+    await chrome.storage.local.set({ highlightList: Array.from(merged) });
+  }
+  pendingLinks.delete(fullHref);
 });
 
 function toRgba(hex, opacity) {
@@ -91,15 +95,26 @@ function applyColors() {
   style.setProperty('--link-highlighter-outline', toRgba(colors.outlineColor, colors.outlineOpacity));
 }
 
-function normalizeURL(url) {
+/* A link with its query and hash optionally removed, and no trailing slash */
+function cleanURL(url, stripQuery, stripHash) {
   try {
     const u = new URL(url);
-    if (normalizeQueryParams) u.search = '';
-    if (normalizeHashFragments) u.hash = '';
+    if (stripQuery) u.search = '';
+    if (stripHash) u.hash = '';
     return u.origin + u.pathname.replace(/\/$/, '') + u.search + u.hash;
   } catch {
     return url;
   }
+}
+
+/* The form links are compared in: follows the normalization settings */
+function normalizeURL(url) {
+  return cleanURL(url, normalizeQueryParams, normalizeHashFragments);
+}
+
+/* The form links are saved in: nothing removed */
+function fullURL(url) {
+  return cleanURL(url, false, false);
 }
 
 function highlightLink(link) {

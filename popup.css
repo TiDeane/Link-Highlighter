@@ -267,16 +267,6 @@ body {
   background: var(--danger-hover);
 }
 
-/* ----- Advanced options ----- */
-
-.note {
-  margin: 0;
-  padding: 8px 12px 10px;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--muted);
-}
-
 /* ----- Highlight colors ----- */
 
 .colors {

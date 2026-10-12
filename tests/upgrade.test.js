@@ -56,6 +56,21 @@ describe('updating from version 1.5 (single toggle, no showHighlights key)', () 
     assert.deepEqual(storage.data.highlightList, list);
   });
 
+  test('links saved by 1.5 in normalized form keep matching, and new ones are added in full', async () => {
+    const list = ['https://wiki.test/JavaScript', 'https://site.test/a'];
+    const storage = createStorage({ isActive: true, highlightList: list });
+    const page = await openPage(storage, `
+      <a id="syntax" href="https://wiki.test/JavaScript#Syntax">Syntax</a>
+      <a id="top" href="https://wiki.test/JavaScript">JavaScript</a>
+    `);
+    assert.deepEqual(page.highlighted(), ['syntax', 'top']);
+
+    await page.mousedown('#syntax');
+
+    assert.deepEqual(storage.data.highlightList, [...list, 'https://wiki.test/JavaScript#Syntax']);
+    assert.deepEqual(page.highlighted(), ['syntax', 'top']);
+  });
+
   test('a user with the extension off stays off, with nothing tracked or shown', async () => {
     const storage = createStorage({ isActive: false, highlightList: [] });
 
