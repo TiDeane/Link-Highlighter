@@ -508,6 +508,45 @@ describe('several tabs', () => {
     assert.deepEqual(tab2.highlighted(), ['a', 'b', 'c']);
   });
 
+  test('links pressed in two tabs at the same moment are both kept', async () => {
+    const storage = createStorage({ isActive: true, highlightList: ['https://site.test/c'] });
+    const tab1 = await openPage(storage, LINKS);
+    const tab2 = await openPage(storage, LINKS);
+
+    // Neither tab has heard about the other's link when it saves its own
+    tab1.$('#a').dispatchEvent(new tab1.window.MouseEvent('mousedown', { bubbles: true }));
+    tab2.$('#b').dispatchEvent(new tab2.window.MouseEvent('mousedown', { bubbles: true }));
+    await settle();
+    await settle();
+
+    assert.deepEqual([...storage.data.highlightList].sort(), ['https://site.test/a', 'https://site.test/b', 'https://site.test/c']);
+    assert.deepEqual(tab1.highlighted(), ['a', 'b', 'c']);
+    assert.deepEqual(tab2.highlighted(), ['a', 'b', 'c']);
+  });
+
+  test('a tab that missed changes does not drop them when it saves a link', async () => {
+    const storage = createStorage({ isActive: true, highlightList: ['https://site.test/c'] });
+    const page = await openPage(storage, LINKS);
+
+    // Saved elsewhere while this tab was frozen or in the back/forward cache
+    storage.changeUnnoticed({ highlightList: ['https://site.test/c', 'https://site.test/x', 'https://site.test/b'] });
+    await page.mousedown('#a');
+
+    assert.deepEqual(storage.data.highlightList, ['https://site.test/c', 'https://site.test/x', 'https://site.test/b', 'https://site.test/a']);
+    assert.deepEqual(page.highlighted(), ['a', 'b', 'c'], 'and it catches up on the links it missed');
+  });
+
+  test('a tab that missed a clear does not bring the cleared links back', async () => {
+    const storage = createStorage({ isActive: true, highlightList: ['https://site.test/b', 'https://site.test/c'] });
+    const page = await openPage(storage, LINKS);
+
+    storage.changeUnnoticed({ highlightList: [] });
+    await page.mousedown('#a');
+
+    assert.deepEqual(storage.data.highlightList, ['https://site.test/a']);
+    assert.deepEqual(page.highlighted(), ['a']);
+  });
+
   test('clearing and hiding apply to every tab', async () => {
     const storage = createStorage({ highlightList: ['https://site.test/a'] });
     const tab1 = await openPage(storage, LINKS);

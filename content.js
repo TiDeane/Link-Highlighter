@@ -6,6 +6,7 @@ let isActive = false;       // whether newly opened links are saved
 let showHighlights = true;  // whether saved links are highlighted
 let storedList = [];          // highlightList exactly as stored
 let highlightSet = new Set(); // storedList normalized with the current settings
+const pendingLinks = new Set(); // links saved by this tab whose write hasn't finished yet
 
 /* Highlight appearance (the defaults match highlight.css) */
 const DEFAULT_COLORS = { highlightColor: '#ffff00', highlightOpacity: 0.7, outlineColor: '#ffa500', outlineOpacity: 1 };
@@ -44,13 +45,26 @@ document.addEventListener('mousedown', async (e) => {
   const normalizedHref = normalizeURL(link.href);
 
   if (!highlightSet.has(normalizedHref)) {
-    // Update locally right away, so rapid clicks don't overwrite each other
+    // Update locally right away, so the link is highlighted before the write finishes
     highlightSet.add(normalizedHref);
-    storedList = Array.from(highlightSet);
+    pendingLinks.add(normalizedHref);
     if (linkObserver) highlightMatchingLinks(new Set([normalizedHref]));
     else if (showHighlights) setupHighlighting();
 
-    await chrome.storage.local.set({ highlightList: storedList });
+    // Add to what is in storage right now, not to this tab's copy: the copy can be
+    // behind (another tab saved a link at the same moment, or this tab was frozen
+    // or in the back/forward cache and missed changes), and writing it back would
+    // drop those links. Then read back once: if another tab's write landed in
+    // between and replaced ours, add the link again
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { highlightList = [] } = await chrome.storage.local.get('highlightList');
+      const merged = new Set(highlightList.map(normalizeURL));
+      if ([...pendingLinks].every(url => merged.has(url))) break;
+
+      pendingLinks.forEach(url => merged.add(url));
+      await chrome.storage.local.set({ highlightList: Array.from(merged) });
+    }
+    pendingLinks.delete(normalizedHref);
   }
 });
 
@@ -62,6 +76,8 @@ function toRgba(hex, opacity) {
 /* Pass custom colors to highlight.css through CSS variables on <html> */
 function applyColors() {
   const style = document.documentElement.style;
+  if (!style) return; // XML documents have no style on their root element
+
   const isDefault = Object.keys(DEFAULT_COLORS).every(key => colors[key] === DEFAULT_COLORS[key]);
 
   // Leave the page untouched unless the user customized something

@@ -62,6 +62,12 @@ function createStorage(initial = {}) {
     data,
     writes,
     local,
+
+    /* Changes storage without telling any tab, as if open tabs had missed the event */
+    changeUnnoticed(items) {
+      Object.assign(data, clone(items));
+    },
+
     onChanged: { addListener: listener => listeners.add(listener) },
     api() {
       return { storage: { local, onChanged: this.onChanged }, runtime: { id: 'test-extension-id' } };
