@@ -346,15 +346,16 @@ body {
   outline-offset: 2px;
 }
 
-.swatches input[type="color"] {
+/* Not clickable: shows the chosen color at the chosen opacity, over a checkerboard */
+.chosen-color {
   width: 30px;
-  height: 24px;
+  height: 22px;
   margin-left: auto;
-  padding: 0;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: none;
-  cursor: pointer;
+  background:
+    linear-gradient(var(--chosen-color), var(--chosen-color)),
+    repeating-conic-gradient(#c8c8c8 0% 25%, #fff 0% 50%) 0 0 / 10px 10px;
 }
 
 .field input[type="range"] {

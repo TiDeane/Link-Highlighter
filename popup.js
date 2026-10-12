@@ -86,10 +86,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const colorPreviews = document.querySelectorAll('.color-preview');
   const colors = await chrome.storage.local.get(DEFAULT_COLORS);
 
-  // Each color has a row of preset swatches followed by a custom color input
+  // Each color has a row of preset swatches, followed by a preview of the chosen color and opacity
   const pickers = [
-    { key: 'highlightColor', presets: HIGHLIGHT_PRESETS, row: document.getElementById('highlight-swatches'), input: document.getElementById('highlight-color') },
-    { key: 'outlineColor', presets: OUTLINE_PRESETS, row: document.getElementById('outline-swatches'), input: document.getElementById('outline-color') }
+    { key: 'highlightColor', opacityKey: 'highlightOpacity', presets: HIGHLIGHT_PRESETS, row: document.getElementById('highlight-swatches'), chosen: document.getElementById('highlight-chosen') },
+    { key: 'outlineColor', opacityKey: 'outlineOpacity', presets: OUTLINE_PRESETS, row: document.getElementById('outline-swatches'), chosen: document.getElementById('outline-chosen') }
   ];
 
   const sliders = [
@@ -104,8 +104,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderColors() {
-    for (const { key, row, input } of pickers) {
-      input.value = colors[key];
+    for (const { key, opacityKey, row, chosen } of pickers) {
+      chosen.style.setProperty('--chosen-color', toRgba(colors[key], colors[opacityKey]));
       row.querySelectorAll('.swatch').forEach(swatch => {
         swatch.setAttribute('aria-pressed', swatch.dataset.color === colors[key]);
       });
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  for (const { key, presets, row, input } of pickers) {
+  for (const { key, presets, row, chosen } of pickers) {
     for (const color of presets) {
       const swatch = document.createElement('button');
       swatch.type = 'button';
@@ -131,10 +131,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       swatch.title = color;
       swatch.style.backgroundColor = color;
       swatch.addEventListener('click', () => setColor(key, color));
-      row.insertBefore(swatch, input);
+      row.insertBefore(swatch, chosen);
     }
-
-    input.addEventListener('input', () => setColor(key, input.value));
   }
 
   for (const { key, slider } of sliders) {
