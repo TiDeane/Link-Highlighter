@@ -42,15 +42,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     await chrome.storage.local.set({ showHighlights: showToggle.checked });
   });
 
-  // Expandable rows (Clear Highlights, Advanced Options) open the panel they control
+  // Expandable rows open the panel they control
   function setExpanded(button, open) {
     button.setAttribute('aria-expanded', open);
     document.getElementById(button.getAttribute('aria-controls')).classList.toggle('open', open);
   }
 
-  document.querySelectorAll('.expander').forEach(button => {
+  // Only one panel is open at a time, so the popup never grows tall enough to scroll
+  const expanders = document.querySelectorAll('.expander');
+  expanders.forEach(button => {
     button.addEventListener('click', () => {
-      setExpanded(button, button.getAttribute('aria-expanded') !== 'true');
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      expanders.forEach(other => setExpanded(other, other === button && open));
     });
   });
 
@@ -86,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const colorPreviews = document.querySelectorAll('.color-preview');
   const colors = await chrome.storage.local.get(DEFAULT_COLORS);
 
-  // Each color has a row of preset swatches, followed by a preview of the chosen color and opacity
+  // Each color has a grid of preset swatches, and a preview of the chosen color and opacity
   const pickers = [
     { key: 'highlightColor', opacityKey: 'highlightOpacity', presets: HIGHLIGHT_PRESETS, row: document.getElementById('highlight-swatches'), chosen: document.getElementById('highlight-chosen') },
     { key: 'outlineColor', opacityKey: 'outlineOpacity', presets: OUTLINE_PRESETS, row: document.getElementById('outline-swatches'), chosen: document.getElementById('outline-chosen') }
@@ -122,7 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  for (const { key, presets, row, chosen } of pickers) {
+  for (const { key, presets, row } of pickers) {
     for (const color of presets) {
       const swatch = document.createElement('button');
       swatch.type = 'button';
@@ -131,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       swatch.title = color;
       swatch.style.backgroundColor = color;
       swatch.addEventListener('click', () => setColor(key, color));
-      row.insertBefore(swatch, chosen);
+      row.appendChild(swatch);
     }
   }
 

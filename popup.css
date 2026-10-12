@@ -282,8 +282,14 @@ body {
 .colors {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.color-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
 .previews {
@@ -293,7 +299,7 @@ body {
 
 .preview {
   flex: 1;
-  padding: 10px 4px;
+  padding: 7px 4px;
   border: 1px dashed var(--border);
   border-radius: 8px;
   text-align: center;
@@ -326,10 +332,18 @@ body {
   color: var(--muted);
 }
 
-.swatches {
+.field-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  white-space: nowrap;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  justify-content: space-between;
+  gap: 6px 0;
 }
 
 .swatch {
@@ -348,14 +362,13 @@ body {
 
 /* Not clickable: shows the chosen color at the chosen opacity, over a checkerboard */
 .chosen-color {
-  width: 30px;
-  height: 22px;
-  margin-left: auto;
+  width: 20px;
+  height: 14px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 4px;
   background:
     linear-gradient(var(--chosen-color), var(--chosen-color)),
-    repeating-conic-gradient(#c8c8c8 0% 25%, #fff 0% 50%) 0 0 / 10px 10px;
+    repeating-conic-gradient(#c8c8c8 0% 25%, #fff 0% 50%) 0 0 / 8px 8px;
 }
 
 .field input[type="range"] {
@@ -365,7 +378,7 @@ body {
 }
 
 .secondary {
-  padding: 7px 12px;
+  padding: 5px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: none;

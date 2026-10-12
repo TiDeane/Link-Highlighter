@@ -173,6 +173,18 @@ describe('expandable rows', () => {
     });
   }
 
+  test('opening a row closes the one that was open, so only one is open at a time', async () => {
+    const popup = await openPopup(createStorage({ highlightList: ['https://site.test/a'] }));
+
+    await popup.click('[aria-controls="colors-panel"]');
+    await popup.click('[aria-controls="advanced-panel"]');
+    assert.deepEqual(['clear-panel', 'colors-panel', 'advanced-panel'].map(popup.isOpen), [false, false, true]);
+    assert.equal(popup.$('[aria-controls="colors-panel"]').getAttribute('aria-expanded'), 'false');
+
+    await popup.click('#clear');
+    assert.deepEqual(['clear-panel', 'colors-panel', 'advanced-panel'].map(popup.isOpen), [true, false, false]);
+  });
+
   test('opening one row leaves the others closed', async () => {
     const popup = await openPopup(createStorage({ highlightList: ['https://site.test/a'] }));
 
