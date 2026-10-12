@@ -1,0 +1,11 @@
+{
+  "name": "link-highlighter",
+  "private": true,
+  "description": "Development tooling for the Link Highlighter extension. Not part of the published extension.",
+  "scripts": {
+    "test": "node --test --test-timeout=60000"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.2"
+  }
+}
