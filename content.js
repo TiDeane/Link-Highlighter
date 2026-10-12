@@ -134,9 +134,15 @@ async function setupHighlighting() {
       const link = entry.target;
       const normalizedHref = normalizeURL(link.href);
 
-      // A re-checked link's href may have changed, so the highlight can also be removed
-      if (!highlightSet.has(normalizedHref)) unhighlightLink(link);
-      else if (!link.classList.contains('highlighted-link')) highlightLink(link);
+      // A re-checked link's href may have changed, so the highlight can also be removed.
+      // Only touch the class when it has to change: any write to it, even one that
+      // changes nothing, is reported to the mutation observer, which re-checks the link
+      const isHighlighted = link.classList.contains('highlighted-link');
+      if (highlightSet.has(normalizedHref)) {
+        if (!isHighlighted) highlightLink(link);
+      } else if (isHighlighted) {
+        unhighlightLink(link);
+      }
 
       linkObserver.unobserve(link);
     }
