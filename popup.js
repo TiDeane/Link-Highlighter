@@ -1,3 +1,14 @@
+/* Highlight appearance (the defaults match highlight.css) */
+const DEFAULT_COLORS = { highlightColor: '#ffff00', highlightOpacity: 0.7, outlineColor: '#ffa500', outlineOpacity: 1 };
+const HIGHLIGHT_PRESETS = ['#ffff00', '#7dff6b', '#5ce1ff', '#ff8ad8', '#ffb347', '#c9a0ff'];
+// Each outline preset is a darker shade of the highlight preset in the same position
+const OUTLINE_PRESETS = ['#ffa500', '#2e9e44', '#1e88e5', '#d81b60', '#e65100', '#8e44ad'];
+
+function toRgba(hex, opacity) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const toggle = document.getElementById('toggle');
   const showToggle = document.getElementById('show-highlights');
@@ -31,20 +42,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     await chrome.storage.local.set({ showHighlights: showToggle.checked });
   });
 
-  // First click reveals the confirmation (clicking again cancels), second button clears
-  clearButton.addEventListener('click', () => {
-    clearConfirm.hidden = !clearConfirm.hidden;
+  // Expandable rows (Clear Highlights, Advanced Options) open the panel they control
+  function setExpanded(button, open) {
+    button.setAttribute('aria-expanded', open);
+    document.getElementById(button.getAttribute('aria-controls')).classList.toggle('open', open);
+  }
+
+  document.querySelectorAll('.expander').forEach(button => {
+    button.addEventListener('click', () => {
+      setExpanded(button, button.getAttribute('aria-expanded') !== 'true');
+    });
   });
 
+  // Clear Highlights reveals the confirmation (clicking again cancels), second button clears
   clearConfirm.addEventListener('click', async () => {
-    clearConfirm.hidden = true;
+    setExpanded(clearButton, false);
     await chrome.storage.local.set({ highlightList: [] });
   });
 
   function updateLinkCount(count) {
     linkCount.textContent = count;
     clearButton.disabled = count === 0;
-    if (count === 0) clearConfirm.hidden = true;
+    if (count === 0) setExpanded(clearButton, false);
   }
 
   // Keep the count current while the popup is open
@@ -61,18 +80,72 @@ document.addEventListener('DOMContentLoaded', async () => {
   normalizeHash.addEventListener('change', async () => {
     await chrome.storage.local.set({ normalizeHashFragments: normalizeHash.checked });
   });
-});
 
-/* Chrome and Firefox have slightly different animations */
-const isFirefox = typeof InstallTrigger !== 'undefined';
-document.body.classList.add(isFirefox ? 'firefox' : 'chrome');
+  /* ----- Highlight colors ----- */
 
-document.querySelector('.section-header').addEventListener('click', () => {
-  const container = document.querySelector('.options-container');
-  const arrow = document.querySelector('.arrow');
-  const advancedOptions = document.querySelector('.advanced-options');
+  const colorPreviews = document.querySelectorAll('.color-preview');
+  const colors = await chrome.storage.local.get(DEFAULT_COLORS);
 
-  advancedOptions.classList.toggle('expanded');
-  container.classList.toggle('visible');
-  arrow.classList.toggle('up');
+  // Each color has a row of preset swatches followed by a custom color input
+  const pickers = [
+    { key: 'highlightColor', presets: HIGHLIGHT_PRESETS, row: document.getElementById('highlight-swatches'), input: document.getElementById('highlight-color') },
+    { key: 'outlineColor', presets: OUTLINE_PRESETS, row: document.getElementById('outline-swatches'), input: document.getElementById('outline-color') }
+  ];
+
+  const sliders = [
+    { key: 'highlightOpacity', slider: document.getElementById('highlight-opacity'), label: document.getElementById('highlight-opacity-value') },
+    { key: 'outlineOpacity', slider: document.getElementById('outline-opacity'), label: document.getElementById('outline-opacity-value') }
+  ];
+
+  async function setColor(key, value) {
+    colors[key] = value;
+    renderColors();
+    await chrome.storage.local.set({ [key]: value });
+  }
+
+  function renderColors() {
+    for (const { key, row, input } of pickers) {
+      input.value = colors[key];
+      row.querySelectorAll('.swatch').forEach(swatch => {
+        swatch.setAttribute('aria-pressed', swatch.dataset.color === colors[key]);
+      });
+    }
+
+    for (const { key, slider, label } of sliders) {
+      slider.value = colors[key];
+      label.textContent = Math.round(colors[key] * 100) + '%';
+    }
+
+    colorPreviews.forEach(preview => {
+      preview.style.backgroundColor = toRgba(colors.highlightColor, colors.highlightOpacity);
+      preview.style.outlineColor = toRgba(colors.outlineColor, colors.outlineOpacity);
+    });
+  }
+
+  for (const { key, presets, row, input } of pickers) {
+    for (const color of presets) {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'swatch';
+      swatch.dataset.color = color;
+      swatch.title = color;
+      swatch.style.backgroundColor = color;
+      swatch.addEventListener('click', () => setColor(key, color));
+      row.insertBefore(swatch, input);
+    }
+
+    input.addEventListener('input', () => setColor(key, input.value));
+  }
+
+  for (const { key, slider } of sliders) {
+    slider.addEventListener('input', () => setColor(key, Number(slider.value)));
+  }
+
+  document.getElementById('reset-colors').addEventListener('click', async () => {
+    Object.assign(colors, DEFAULT_COLORS);
+    renderColors();
+    await chrome.storage.local.set(DEFAULT_COLORS);
+  });
+
+  renderColors();
 });

@@ -1,0 +1,379 @@
+:root {
+  color-scheme: light dark;
+
+  --bg: #f5f5f7;
+  --card: #ffffff;
+  --border: #e2e2e6;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --hover: #f0f0f3;
+  --track: #c9c9cf;
+  --accent: #f08c00;
+  --danger: #c62828;
+  --danger-hover: #a81f1f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1c1f;
+    --card: #28282c;
+    --border: #3a3a40;
+    --text: #f2f2f4;
+    --muted: #a1a1a8;
+    --hover: #323237;
+    --track: #55555c;
+    --accent: #ffa31a;
+    --danger: #e5484d;
+    --danger-hover: #f2555a;
+  }
+}
+
+body {
+  width: 280px;
+  margin: 0;
+  padding: 14px;
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ----- Header ----- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 2px 14px;
+}
+
+.header img {
+  border-radius: 6px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* ----- Cards and rows ----- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card + .card {
+  margin-top: 10px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: var(--hover);
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.row-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row-title {
+  font-weight: 500;
+}
+
+.row-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ----- Switches ----- */
+
+.switch {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 10px;
+  background: var(--track);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.switch:checked {
+  background: var(--accent);
+}
+
+.switch:checked::before {
+  transform: translateX(16px);
+}
+
+.switch:focus-visible,
+.expander:focus-visible,
+.danger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ----- Expandable rows (Clear Highlights, Advanced Options) ----- */
+
+.expander {
+  box-sizing: border-box;
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.expander .row-title {
+  flex: 1;
+}
+
+.expander:focus-visible {
+  outline-offset: -2px;
+}
+
+.chevron {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin: -3px 3px 0;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.expander[aria-expanded="true"] .chevron {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+
+.expander:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.expander:disabled:hover {
+  background: none;
+}
+
+.expander:disabled .chevron {
+  opacity: 0.4;
+}
+
+.count {
+  min-width: 12px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--hover);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* Animates between collapsed and the content's own height */
+.collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 0.3s ease, opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+.collapsible.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition: grid-template-rows 0.3s ease, opacity 0.5s ease, visibility 0s;
+}
+
+.collapsible-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Chrome and Firefox have slightly different animations: Firefox only fades in */
+@supports (-moz-appearance: none) {
+  .collapsible {
+    transition: none;
+  }
+
+  .collapsible.open {
+    transition: opacity 0.5s ease;
+  }
+}
+
+.panel {
+  border-top: 1px solid var(--border);
+}
+
+/* ----- Clear confirmation ----- */
+
+.confirm {
+  padding: 10px 12px;
+}
+
+.danger {
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.danger:hover {
+  background: var(--danger-hover);
+}
+
+/* ----- Advanced options ----- */
+
+.note {
+  margin: 0;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ----- Highlight colors ----- */
+
+.colors {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.previews {
+  display: flex;
+  gap: 8px;
+}
+
+.preview {
+  flex: 1;
+  padding: 10px 4px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.preview-plain {
+  background: #fff;
+  color: #000;
+}
+
+.preview-dark {
+  background: #1c1c1f;
+  color: #f2f2f4;
+}
+
+.color-preview {
+  display: inline-block;
+  padding: 0 2px;
+  outline: 2px solid;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.swatches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch[aria-pressed="true"] {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.swatches input[type="color"] {
+  width: 30px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.field input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.secondary {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.secondary:hover {
+  background: var(--hover);
+}

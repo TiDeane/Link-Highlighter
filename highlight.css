@@ -1,0 +1,12 @@
+/* Injected into every page: keep this file to the highlight classes only */
+
+.highlighted-link {
+  /* The variables are only set (by content.js) when the user picked custom colors */
+  background-color: var(--link-highlighter-bg, rgba(255, 255, 0, 0.7));
+  outline: 2px solid var(--link-highlighter-outline, orange);
+}
+
+/* Only added to links whose own display is plain inline */
+.highlighted-link-inline {
+  display: inline-block;
+}

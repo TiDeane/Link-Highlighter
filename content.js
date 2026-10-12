@@ -7,13 +7,21 @@ let showHighlights = true;  // whether saved links are highlighted
 let storedList = [];          // highlightList exactly as stored
 let highlightSet = new Set(); // storedList normalized with the current settings
 
+/* Highlight appearance (the defaults match highlight.css) */
+const DEFAULT_COLORS = { highlightColor: '#ffff00', highlightOpacity: 0.7, outlineColor: '#ffa500', outlineOpacity: 1 };
+let colors = { ...DEFAULT_COLORS };
+
 const stateLoaded = chrome.storage.local.get({
   isActive: false,
   showHighlights: true,
   highlightList: [],
   normalizeQueryParams: true,
-  normalizeHashFragments: true
+  normalizeHashFragments: true,
+  ...DEFAULT_COLORS
 }).then(state => {
+  for (const key in DEFAULT_COLORS) colors[key] = state[key];
+  applyColors();
+
   ({ isActive, showHighlights, normalizeQueryParams, normalizeHashFragments } = state);
   storedList = state.highlightList;
   highlightSet = new Set(storedList.map(normalizeURL));
@@ -45,6 +53,27 @@ document.addEventListener('mousedown', async (e) => {
     await chrome.storage.local.set({ highlightList: storedList });
   }
 });
+
+function toRgba(hex, opacity) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+/* Pass custom colors to highlight.css through CSS variables on <html> */
+function applyColors() {
+  const style = document.documentElement.style;
+  const isDefault = Object.keys(DEFAULT_COLORS).every(key => colors[key] === DEFAULT_COLORS[key]);
+
+  // Leave the page untouched unless the user customized something
+  if (isDefault) {
+    style.removeProperty('--link-highlighter-bg');
+    style.removeProperty('--link-highlighter-outline');
+    return;
+  }
+
+  style.setProperty('--link-highlighter-bg', toRgba(colors.highlightColor, colors.highlightOpacity));
+  style.setProperty('--link-highlighter-outline', toRgba(colors.outlineColor, colors.outlineOpacity));
+}
 
 function normalizeURL(url) {
   try {
@@ -185,6 +214,16 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area != 'local') return;
 
   await stateLoaded;
+
+  // Color changes only need the CSS variables updated, not a re-check of links
+  let colorsChanged = false;
+  for (const key in DEFAULT_COLORS) {
+    if (key in changes) {
+      colors[key] = changes[key].newValue ?? DEFAULT_COLORS[key];
+      colorsChanged = true;
+    }
+  }
+  if (colorsChanged) applyColors();
 
   const settingsChanged = 'normalizeQueryParams' in changes || 'normalizeHashFragments' in changes;
 
