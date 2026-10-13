@@ -2,7 +2,7 @@
 
 A simple browser extension that highlights all links opened on any tab while tracking was toggled on. Highlights can be hidden and shown again without losing them, cleared at any time, and customized with your own colors and opacity. Geared towards recruiters, researchers, or anyone wanting to keep track of which links they've opened.
 
-#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and [Chrome](https://chromewebstore.google.com/detail/link-highlighter/hbdaiciogdfmibiekklhllpbldhodbil?authuser=0&hl=en-GB).
+#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and [Chrome](https://chromewebstore.google.com/detail/link-highlighter/hbdaiciogdfmibiekklhllpbldhodbil).
 
 ---
 
@@ -60,7 +60,7 @@ However, normalizing URLs may lead to results that aren't ideal on other website
   - **Example**: ``https://en.wikipedia.org/wiki/JavaScript#Syntax`` → becomes ``https://en.wikipedia.org/wiki/JavaScript``.
   - **Use case**: Wikipedia uses ``#`` to jump to specific sections, so if you want to track which sections you’ve visited, turn off hash fragment normalization so each section link remains distinct.
 
-**Note**: the full link is always saved, so these settings can be toggled on or off at any time without losing which specific links you've opened.
+**Note**: the full URL is always saved, so these settings can be toggled on or off at any time without losing which specific links you've opened.
 
 ## Example Images
 
