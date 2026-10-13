@@ -64,10 +64,7 @@
 
           <!-- Swatches are added by popup.js, before the box that previews the chosen color -->
           <div class="field">
-            <div class="field-head">
-              <span class="field-label">Inner Highlight</span>
-              <button type="button" class="text-button" id="reset-colors">Reset to Default</button>
-            </div>
+            <span class="field-label">Inner Highlight</span>
             <div class="swatches" id="highlight-swatches">
               <span class="chosen-color" id="highlight-chosen" title="Chosen color and opacity"></span>
             </div>
@@ -89,6 +86,8 @@
             <label class="field-label" for="outline-opacity">Outline Opacity <span id="outline-opacity-value"></span></label>
             <input type="range" id="outline-opacity" min="0" max="1" step="0.05">
           </div>
+
+          <button type="button" class="text-button" id="reset-colors">Reset to Default</button>
         </div>
       </div>
     </div>
