@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Link Highlighter",
-  "version": "1.5",
+  "version": "2.0",
   "description": "Highlights all links opened while enabled.",
   "action": {
     "default_popup": "popup.html",
