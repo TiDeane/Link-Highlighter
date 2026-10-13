@@ -170,9 +170,16 @@ async function openPage(storage, html, { url = 'https://example.com/page' } = {}
       window.close();
     },
 
-    /* Simulates the extension being reloaded or updated under an open tab */
+    /* Simulates the extension being disabled, removed, reloaded or updated under an open tab */
     orphan() {
       window.chrome.runtime.id = undefined;
+    },
+
+    /* The user switches back to this tab, or clicks into its window */
+    async comeBack(type = 'visibilitychange') {
+      const target = type === 'focus' ? window : window.document;
+      target.dispatchEvent(new window.Event(type));
+      await settle();
     }
   };
 

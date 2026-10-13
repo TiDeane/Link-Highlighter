@@ -127,6 +127,49 @@ describe('tracking opened links', () => {
   });
 });
 
+describe('extension disabled or removed under an open tab', () => {
+  for (const event of ['visibilitychange', 'focus', 'mousedown']) {
+    test(`highlights and custom colors leave the page on the next ${event}`, async () => {
+      const storage = createStorage({ highlightList: ['https://site.test/a'], highlightColor: '#5ce1ff', outlineColor: '#1e88e5' });
+      const page = await openPage(storage, LINKS);
+      assert.deepEqual(page.highlighted(), ['a']);
+
+      page.orphan();
+      if (event === 'mousedown') await page.mousedown('#b');
+      else await page.comeBack(event);
+
+      assert.deepEqual(page.highlighted(), []);
+      assert.equal(page.$('#a').classList.contains('highlighted-link-inline'), false);
+      assert.equal(page.document.documentElement.style.getPropertyValue('--link-highlighter-bg'), '');
+      assert.equal(page.document.documentElement.style.getPropertyValue('--link-highlighter-outline'), '');
+      assert.deepEqual(page.errors, []);
+    });
+  }
+
+  test('nothing is highlighted again afterwards, and the saved links are untouched', async () => {
+    const storage = createStorage({ isActive: true, highlightList: ['https://site.test/a'] });
+    const page = await openPage(storage, LINKS);
+
+    page.orphan();
+    await page.comeBack();
+    await page.scrollIntoView('#a');
+    await page.mousedown('#b');
+
+    assert.deepEqual(page.highlighted(), []);
+    assert.deepEqual(storage.data.highlightList, ['https://site.test/a']);
+    assert.deepEqual(page.errors, []);
+  });
+
+  test('coming back to a tab keeps the highlights while the extension is enabled', async () => {
+    const page = await openPage(createStorage({ highlightList: ['https://site.test/a'] }), LINKS);
+
+    await page.comeBack();
+    await page.comeBack('focus');
+
+    assert.deepEqual(page.highlighted(), ['a']);
+  });
+});
+
 describe('URL normalization', () => {
   const VARIANTS = `
     <a id="plain" href="https://site.test/profile">plain</a>

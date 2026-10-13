@@ -32,11 +32,7 @@ document.addEventListener('mousedown', async (e) => {
   let link = e.target.closest('a');
   if (!link || !link.href) return;
 
-  // The extension was reloaded or updated, and this copy of the script is orphaned
-  if (!chrome.runtime?.id) {
-    cleanupObservers();
-    return;
-  }
+  if (stopIfOrphaned()) return;
 
   await stateLoaded;
   if (!isActive) return;
@@ -227,6 +223,30 @@ function cleanupObservers() {
   mutationObserver = null;
   linkObserver = null;
 }
+
+/* When the extension is disabled, removed, reloaded or updated, this copy of the
+   script is orphaned: it gets no more storage events, and in Chrome highlight.css
+   stays on the page. So it takes its highlights off the page and stops. The browser
+   sends no event for this, so it's checked when the user comes back to the tab */
+function stopIfOrphaned() {
+  if (chrome.runtime?.id) return false;
+
+  cleanupObservers();
+  clearAllHighlights();
+
+  const style = document.documentElement.style;
+  if (style) {
+    style.removeProperty('--link-highlighter-bg');
+    style.removeProperty('--link-highlighter-outline');
+  }
+
+  document.removeEventListener('visibilitychange', stopIfOrphaned);
+  window.removeEventListener('focus', stopIfOrphaned);
+  return true;
+}
+
+document.addEventListener('visibilitychange', stopIfOrphaned);
+window.addEventListener('focus', stopIfOrphaned);
 
 /* Listen for changes in storage (toggles, settings or list update) */
 chrome.storage.onChanged.addListener(async (changes, area) => {
