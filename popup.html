@@ -64,15 +64,18 @@
 
           <!-- Swatches are added by popup.js, before the box that previews the chosen color -->
           <div class="field">
-            <span class="field-label">Inner Highlight</span>
+            <div class="field-head">
+              <span class="field-label">Inner Highlight</span>
+              <button type="button" class="text-button" id="reset-colors">Reset to Default</button>
+            </div>
             <div class="swatches" id="highlight-swatches">
               <span class="chosen-color" id="highlight-chosen" title="Chosen color and opacity"></span>
             </div>
-            <div class="opacity">
-              <label class="field-label" for="highlight-opacity">Opacity</label>
-              <input type="range" id="highlight-opacity" min="0.1" max="1" step="0.05">
-              <span class="field-label opacity-value" id="highlight-opacity-value"></span>
-            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="highlight-opacity">Inner Highlight Opacity <span id="highlight-opacity-value"></span></label>
+            <input type="range" id="highlight-opacity" min="0.1" max="1" step="0.05">
           </div>
 
           <div class="field">
@@ -80,14 +83,12 @@
             <div class="swatches" id="outline-swatches">
               <span class="chosen-color" id="outline-chosen" title="Chosen color and opacity"></span>
             </div>
-            <div class="opacity">
-              <label class="field-label" for="outline-opacity">Opacity</label>
-              <input type="range" id="outline-opacity" min="0" max="1" step="0.05">
-              <span class="field-label opacity-value" id="outline-opacity-value"></span>
-            </div>
           </div>
 
-          <button type="button" class="secondary" id="reset-colors">Reset to Default</button>
+          <div class="field">
+            <label class="field-label" for="outline-opacity">Outline Opacity <span id="outline-opacity-value"></span></label>
+            <input type="range" id="outline-opacity" min="0" max="1" step="0.05">
+          </div>
         </div>
       </div>
     </div>

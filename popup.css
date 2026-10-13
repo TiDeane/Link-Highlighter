@@ -143,6 +143,7 @@ body {
 
 .switch:focus-visible,
 .expander:focus-visible,
+.text-button:focus-visible,
 .danger:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -272,8 +273,8 @@ body {
 .colors {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 9px 12px;
+  gap: 7px;
+  padding: 8px 12px;
 }
 
 .previews {
@@ -308,7 +309,7 @@ body {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .field-label {
@@ -322,17 +323,7 @@ body {
   gap: 8px;
 }
 
-/* The label, the slider and the value share one line to keep the popup short */
-.opacity {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
-.opacity-value {
-  width: 30px;
-  text-align: right;
-}
 
 .swatch {
   width: 22px;
@@ -362,23 +353,29 @@ body {
 }
 
 .field input[type="range"] {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   margin: 0;
   accent-color: var(--accent);
 }
 
-.secondary {
-  padding: 3px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  transition: background 0.15s ease;
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
 
-.secondary:hover {
-  background: var(--hover);
+/* A small link-style button, used for Reset to Default */
+.text-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.text-button:hover {
+  color: var(--text);
 }
