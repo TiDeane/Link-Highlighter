@@ -31,7 +31,7 @@
 body {
   width: 280px;
   margin: 0;
-  padding: 14px;
+  padding: 12px 14px;
   box-sizing: border-box;
   font-family: system-ui, sans-serif;
   font-size: 14px;
@@ -45,7 +45,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 2px 2px 14px;
+  margin: 2px 2px 12px;
 }
 
 .header img {
@@ -68,7 +68,7 @@ body {
 }
 
 .card + .card {
-  margin-top: 10px;
+  margin-top: 9px;
 }
 
 .row {
@@ -272,14 +272,8 @@ body {
 .colors {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 12px;
-}
-
-.color-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 8px;
+  padding: 9px 12px;
 }
 
 .previews {
@@ -289,7 +283,7 @@ body {
 
 .preview {
   flex: 1;
-  padding: 7px 4px;
+  padding: 6px 4px;
   border: 1px dashed var(--border);
   border-radius: 8px;
   text-align: center;
@@ -314,7 +308,7 @@ body {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .field-label {
@@ -322,18 +316,22 @@ body {
   color: var(--muted);
 }
 
-.field-head {
+.swatches {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  white-space: nowrap;
+  gap: 8px;
 }
 
-.swatches {
-  display: grid;
-  grid-template-columns: repeat(3, 22px);
-  justify-content: space-between;
-  gap: 6px 0;
+/* The label, the slider and the value share one line to keep the popup short */
+.opacity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opacity-value {
+  width: 30px;
+  text-align: right;
 }
 
 .swatch {
@@ -352,23 +350,26 @@ body {
 
 /* Not clickable: shows the chosen color at the chosen opacity, over a checkerboard */
 .chosen-color {
-  width: 20px;
-  height: 14px;
+  order: 1; /* after the swatches, which popup.js appends */
+  width: 30px;
+  height: 22px;
+  margin-left: auto;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   background:
     linear-gradient(var(--chosen-color), var(--chosen-color)),
-    repeating-conic-gradient(#c8c8c8 0% 25%, #fff 0% 50%) 0 0 / 8px 8px;
+    repeating-conic-gradient(#c8c8c8 0% 25%, #fff 0% 50%) 0 0 / 10px 10px;
 }
 
 .field input[type="range"] {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   margin: 0;
   accent-color: var(--accent);
 }
 
 .secondary {
-  padding: 5px 12px;
+  padding: 3px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: none;
