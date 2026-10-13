@@ -136,7 +136,8 @@ async function openPage(storage, html, { url = 'https://example.com/page' } = {}
   window.addEventListener('error', event => errors.push(event.error));
   const observers = installFakeIntersectionObserver(window);
 
-  window.eval(read('content.js'));
+  // One eval, because the browser runs the manifest's scripts in one shared scope
+  window.eval(read('shared.js') + '\n' + read('content.js'));
   await settle();
 
   const page = {
@@ -187,7 +188,7 @@ async function openPopup(storage) {
   const { window } = dom;
 
   window.chrome = storage.api();
-  window.eval(read('popup.js'));
+  window.eval(read('shared.js') + '\n' + read('popup.js'));
   if (window.document.readyState !== 'loading') {
     window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
   }

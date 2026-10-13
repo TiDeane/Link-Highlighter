@@ -1,13 +1,7 @@
-/* Highlight appearance (the defaults match highlight.css) */
-const DEFAULT_COLORS = { highlightColor: '#ffff00', highlightOpacity: 0.7, outlineColor: '#ffa500', outlineOpacity: 1 };
+/* DEFAULT_COLORS, toRgba and cleanURL come from shared.js */
 const HIGHLIGHT_PRESETS = ['#ffff00', '#7dff6b', '#5ce1ff', '#ff8ad8', '#ffb347', '#c9a0ff'];
 // Each outline preset is a darker shade of the highlight preset in the same position
 const OUTLINE_PRESETS = ['#ffa500', '#2e9e44', '#1e88e5', '#d81b60', '#e65100', '#8e44ad'];
-
-function toRgba(hex, opacity) {
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const toggle = document.getElementById('toggle');
@@ -30,9 +24,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   toggle.checked = isActive;
   showToggle.checked = showHighlights;
-  updateLinkCount(highlightList.length);
   normalizeQuery.checked = normalizeQueryParams;
   normalizeHash.checked = normalizeHashFragments;
+
+  let savedLinks = highlightList;
+  updateLinkCount();
 
   toggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ isActive: toggle.checked });
@@ -63,7 +59,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await chrome.storage.local.set({ highlightList: [] });
   });
 
-  function updateLinkCount(count) {
+  // Counts links the way pages highlight them: with a normalization option on,
+  // saved links that only differ by query or hash are one highlighted page
+  function updateLinkCount() {
+    const count = new Set(savedLinks.map(url => cleanURL(url, normalizeQuery.checked, normalizeHash.checked))).size;
     linkCount.textContent = count;
     clearButton.disabled = count === 0;
     if (count === 0) setExpanded(clearButton, false);
@@ -72,15 +71,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Keep the count current while the popup is open
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && 'highlightList' in changes) {
-      updateLinkCount((changes.highlightList.newValue ?? []).length);
+      savedLinks = changes.highlightList.newValue ?? [];
+      updateLinkCount();
     }
   });
 
   normalizeQuery.addEventListener('change', async () => {
+    updateLinkCount();
     await chrome.storage.local.set({ normalizeQueryParams: normalizeQuery.checked });
   });
 
   normalizeHash.addEventListener('change', async () => {
+    updateLinkCount();
     await chrome.storage.local.set({ normalizeHashFragments: normalizeHash.checked });
   });
 

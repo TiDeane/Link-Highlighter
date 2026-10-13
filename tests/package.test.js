@@ -29,7 +29,8 @@ describe('manifest', () => {
 
   test('runs the content script on every page', () => {
     assert.deepEqual(manifest.content_scripts[0].matches, ['<all_urls>']);
-    assert.deepEqual(manifest.content_scripts[0].js, ['content.js']);
+    // shared.js first: content.js uses what it defines
+    assert.deepEqual(manifest.content_scripts[0].js, ['shared.js', 'content.js']);
   });
 
   test('ships nothing from the test setup', () => {
@@ -41,6 +42,33 @@ describe('manifest', () => {
 
   test('keeps the Firefox add-on id', () => {
     assert.equal(manifest.browser_specific_settings.gecko.id, '{93070e97-cab0-454a-bdf1-df682dbe42f6}');
+  });
+});
+
+describe('store package (npm run package)', () => {
+  const zipped = require('../package.json').scripts.package.split('link-highlighter.zip').pop().trim().split(/\s+/);
+  const isZipped = file => zipped.includes(file) || zipped.includes(file.split('/')[0]);
+
+  test('contains every file the manifest and the popup need', () => {
+    const { document } = new JSDOM(read('popup.html')).window;
+    const needed = [
+      'manifest.json',
+      manifest.action.default_popup,
+      ...Object.values(manifest.icons),
+      ...manifest.content_scripts.flatMap(script => [...script.js, ...(script.css ?? [])]),
+      ...[...document.querySelectorAll('script[src]')].map(el => el.getAttribute('src')),
+      ...[...document.querySelectorAll('link[rel="stylesheet"]')].map(el => el.getAttribute('href')),
+      ...[...document.querySelectorAll('img[src]')].map(el => el.getAttribute('src'))
+    ];
+
+    for (const file of needed) assert.equal(isZipped(file), true, `${file} is not in the package`);
+  });
+
+  test('contains nothing from the test setup', () => {
+    for (const name of ['tests', 'node_modules', 'package.json', 'package-lock.json']) {
+      assert.equal(zipped.includes(name), false, `${name} would be packaged`);
+    }
+    for (const file of zipped) assert.equal(exists(file), true, `${file} does not exist`);
   });
 });
 
@@ -56,6 +84,12 @@ describe('popup.html', () => {
 
     assert.notEqual(files.length, 0);
     for (const file of files) assert.equal(exists(file), true, `${file} is missing`);
+  });
+
+  test('loads shared.js before popup.js', () => {
+    const scripts = [...document.querySelectorAll('script[src]')].map(el => el.getAttribute('src'));
+
+    assert.deepEqual(scripts, ['shared.js', 'popup.js']);
   });
 
   test('has no inline scripts, which extension pages are not allowed to run', () => {
@@ -101,12 +135,16 @@ describe('default colors', () => {
     return new Function(`return ${literal}`)();
   };
 
-  test('content.js and popup.js agree', () => {
-    assert.deepEqual(defaultsIn('content.js'), defaultsIn('popup.js'));
+  test('are defined once, in shared.js, for both the content script and the popup', () => {
+    for (const file of ['content.js', 'popup.js']) {
+      assert.equal(/const DEFAULT_COLORS\s*=/.test(read(file)), false, `${file} has its own copy`);
+      assert.equal(/function (cleanURL|toRgba)\(/.test(read(file)), false, `${file} has its own copy of a shared function`);
+    }
+    assert.deepEqual(Object.keys(defaultsIn('shared.js')), ['highlightColor', 'highlightOpacity', 'outlineColor', 'outlineOpacity']);
   });
 
   test('the fallbacks in highlight.css match them', () => {
-    const { highlightColor, highlightOpacity, outlineColor, outlineOpacity } = defaultsIn('content.js');
+    const { highlightColor, highlightOpacity, outlineColor, outlineOpacity } = defaultsIn('shared.js');
     const css = read('highlight.css');
 
     assert.equal(highlightColor, '#ffff00');
@@ -124,8 +162,8 @@ describe('default colors', () => {
     const outline = presets('OUTLINE_PRESETS');
 
     assert.equal(highlight.length, outline.length);
-    assert.equal(highlight[0], defaultsIn('popup.js').highlightColor);
-    assert.equal(outline[0], defaultsIn('popup.js').outlineColor);
+    assert.equal(highlight[0], defaultsIn('shared.js').highlightColor);
+    assert.equal(outline[0], defaultsIn('shared.js').outlineColor);
     for (const color of [...highlight, ...outline]) assert.match(color, /^#[0-9a-f]{6}$/);
   });
 });

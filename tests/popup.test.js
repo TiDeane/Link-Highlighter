@@ -80,6 +80,69 @@ describe('Clear Highlights', () => {
     assert.equal(popup.$('#clear').disabled, false);
   });
 
+  describe('the count follows the normalization settings', () => {
+    const sections = ['https://wiki.test/JS#History', 'https://wiki.test/JS#Syntax', 'https://wiki.test/JS#Security', 'https://wiki.test/Other'];
+    const tabs = ['https://git.test/user?tab=repos', 'https://git.test/user?tab=stars', 'https://git.test/user'];
+
+    test('with both options on, links to the same page count once', async () => {
+      const popup = await openPopup(createStorage({ highlightList: [...sections, ...tabs] }));
+
+      assert.equal(popup.$('#link-count').textContent, '3'); // JS, Other, user
+    });
+
+    test('with hash normalization off, each section counts', async () => {
+      const popup = await openPopup(createStorage({ normalizeHashFragments: false, highlightList: sections }));
+
+      assert.equal(popup.$('#link-count').textContent, '4');
+    });
+
+    test('with query normalization off, each query counts', async () => {
+      const popup = await openPopup(createStorage({ normalizeQueryParams: false, highlightList: tabs }));
+
+      assert.equal(popup.$('#link-count').textContent, '3');
+    });
+
+    test('recounts as soon as an option is toggled, without changing what is saved', async () => {
+      const storage = createStorage({ highlightList: sections });
+      const popup = await openPopup(storage);
+      assert.equal(popup.$('#link-count').textContent, '2');
+
+      await popup.click('#normalize-hash');
+      assert.equal(popup.$('#link-count').textContent, '4');
+
+      await popup.click('#normalize-hash');
+      assert.equal(popup.$('#link-count').textContent, '2');
+      assert.deepEqual(storage.data.highlightList, sections);
+    });
+
+    test('a trailing slash never makes a second link', async () => {
+      const popup = await openPopup(createStorage({ highlightList: ['https://site.test/a', 'https://site.test/a/'] }));
+
+      assert.equal(popup.$('#link-count').textContent, '1');
+    });
+
+    test('a link saved again in another form does not raise the count while it stays one page', async () => {
+      const storage = createStorage({ highlightList: ['https://wiki.test/JS#History'] });
+      const popup = await openPopup(storage);
+
+      await storage.local.set({ highlightList: ['https://wiki.test/JS#History', 'https://wiki.test/JS#Syntax'] });
+      await settle();
+
+      assert.equal(popup.$('#link-count').textContent, '1');
+    });
+
+    test('Clear Highlights still removes every saved link', async () => {
+      const storage = createStorage({ highlightList: sections });
+      const popup = await openPopup(storage);
+
+      await popup.click('#clear');
+      await popup.click('#clear-confirm');
+
+      assert.deepEqual(storage.data.highlightList, []);
+      assert.equal(popup.$('#link-count').textContent, '0');
+    });
+  });
+
   test('is disabled when nothing is saved', async () => {
     const popup = await openPopup(createStorage());
 
@@ -300,6 +363,14 @@ describe('Customize Highlights', () => {
     assert.deepEqual(pressed(popup, 'outline-swatches'), ['#d81b60']);
     assert.equal(popup.$('#highlight-opacity-value').textContent, '40%');
     assert.equal(popup.$('#outline-opacity-value').textContent, '60%');
+  });
+
+  test('the popup accent stays the stylesheet orange whatever outline color is chosen', async () => {
+    const popup = await openPopup(createStorage({ outlineColor: '#8e44ad' }));
+
+    await popup.click(swatches(popup, 'outline-swatches')[2]);
+
+    assert.equal(popup.document.documentElement.style.getPropertyValue('--accent'), '');
   });
 
   test('Reset to Default restores all four settings and leaves the links alone', async () => {

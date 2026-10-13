@@ -8,8 +8,7 @@ let storedList = [];          // highlightList exactly as stored: full links
 let highlightSet = new Set(); // storedList normalized with the current settings
 const pendingLinks = new Set(); // links saved by this tab whose write hasn't finished yet
 
-/* Highlight appearance (the defaults match highlight.css) */
-const DEFAULT_COLORS = { highlightColor: '#ffff00', highlightOpacity: 0.7, outlineColor: '#ffa500', outlineOpacity: 1 };
+/* Highlight appearance. DEFAULT_COLORS, toRgba and cleanURL come from shared.js */
 let colors = { ...DEFAULT_COLORS };
 
 const stateLoaded = chrome.storage.local.get({
@@ -72,11 +71,6 @@ document.addEventListener('mousedown', async (e) => {
   pendingLinks.delete(fullHref);
 });
 
-function toRgba(hex, opacity) {
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-}
-
 /* Pass custom colors to highlight.css through CSS variables on <html> */
 function applyColors() {
   const style = document.documentElement.style;
@@ -93,18 +87,6 @@ function applyColors() {
 
   style.setProperty('--link-highlighter-bg', toRgba(colors.highlightColor, colors.highlightOpacity));
   style.setProperty('--link-highlighter-outline', toRgba(colors.outlineColor, colors.outlineOpacity));
-}
-
-/* A link with its query and hash optionally removed, and no trailing slash */
-function cleanURL(url, stripQuery, stripHash) {
-  try {
-    const u = new URL(url);
-    if (stripQuery) u.search = '';
-    if (stripHash) u.hash = '';
-    return u.origin + u.pathname.replace(/\/$/, '') + u.search + u.hash;
-  } catch {
-    return url;
-  }
 }
 
 /* The form links are compared in: follows the normalization settings */
