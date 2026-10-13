@@ -1,4 +1,4 @@
-# Link Highlighter
+# Opened Link Highlighter
 
 A simple browser extension that highlights all links opened on any tab while tracking was toggled on. Highlights can be hidden and shown again without losing them, cleared at any time, and customized with your own colors and opacity. Geared towards recruiters, researchers, or anyone wanting to keep track of which links they've opened.
 

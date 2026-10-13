@@ -1,7 +1,7 @@
 {
   "name": "link-highlighter",
   "private": true,
-  "description": "Development tooling for the Link Highlighter extension. Not part of the published extension.",
+  "description": "Development tooling for the Opened Link Highlighter extension. Not part of the published extension.",
   "scripts": {
     "test": "node --test --test-timeout=60000",
     "package": "rm -f link-highlighter.zip && zip -r link-highlighter.zip manifest.json shared.js content.js highlight.css popup.html popup.js popup.css icons"
