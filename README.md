@@ -2,7 +2,7 @@
 
 A simple browser extension that highlights all links opened on any tab while tracking was toggled on. Highlights can be hidden and shown again without losing them, cleared at any time, and customized with your own colors and opacity. Geared towards recruiters, researchers, or anyone wanting to keep track of which links they've opened.
 
-#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/url-highlighter/) and [Chrome](https://chromewebstore.google.com/detail/link-highlighter/hbdaiciogdfmibiekklhllpbldhodbil).
+#### Available on [Firefox](https://addons.mozilla.org/en-US/firefox/addon/opened-link-highlighter/) and [Chrome](https://chromewebstore.google.com/detail/opened-link-highlighter/hbdaiciogdfmibiekklhllpbldhodbil?authuser=0&hl=en-GB).
 
 ![Opening a link in one window highlights the same link in another window](demos/multiple_tabs_demo.gif)
 
